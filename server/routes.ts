@@ -862,8 +862,21 @@ asyncio.run(main())
         return res.status(500).json({ message: "Failed to scan website" });
       }
 
-      const markdown = (scraped as any).markdown || "";
-      const metadata = (scraped as any).metadata || {};
+      // Firecrawl responses can differ by version: some return fields at the top level,
+      // others nest them under `data`.
+      const scrapedPayload = (scraped as any).data ?? scraped;
+      const markdown =
+        scrapedPayload.markdown ||
+        scrapedPayload.content ||
+        scrapedPayload.text ||
+        "";
+      const metadata = scrapedPayload.metadata || {};
+
+      if (!markdown.trim() && !metadata.title && !metadata.description) {
+        return res.status(422).json({
+          message: "Website scan returned no readable content",
+        });
+      }
 
       // Use OpenAI/Gemini to analyze the website content and extract structured insights
       let analysis = "";
@@ -938,6 +951,19 @@ Respond as JSON with keys: brand, audience, competitors, offers, notes — each 
               createdEntries.push(entry);
             }
           }
+
+          if (createdEntries.length === 0) {
+            const fallbackEntry = await storage.createKnowledgeBaseEntry({
+              clientId,
+              category: "notes",
+              title: `Website Scan Summary — ${url}`,
+              content:
+                typeof analysis === "string" && analysis.trim().length > 0
+                  ? analysis
+                  : `Website metadata:\nTitle: ${metadata.title || "Unknown"}\nDescription: ${metadata.description || "Unknown"}\n\nContent preview:\n${markdown.slice(0, 5000)}`,
+            });
+            createdEntries.push(fallbackEntry);
+          }
         } catch (parseErr: any) {
           console.error("Failed to parse AI analysis:", parseErr.message);
           // Store raw analysis as a note
@@ -951,11 +977,14 @@ Respond as JSON with keys: brand, audience, competitors, offers, notes — each 
         }
       } else {
         // No AI available — store raw content
+        const fallbackContent = markdown.trim()
+          ? markdown.slice(0, 5000)
+          : `Website metadata:\nTitle: ${metadata.title || "Unknown"}\nDescription: ${metadata.description || "Unknown"}`;
         const entry = await storage.createKnowledgeBaseEntry({
           clientId,
           category: "notes",
           title: `Website Content — ${url}`,
-          content: markdown.slice(0, 5000),
+          content: fallbackContent,
         });
         createdEntries.push(entry);
       }
