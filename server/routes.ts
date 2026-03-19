@@ -940,13 +940,37 @@ Respond as JSON with keys: brand, audience, competitors, offers, notes — each 
             notes: "notes",
           };
 
+          const formatSection = (value: unknown): string => {
+            if (typeof value === "string") return value.trim();
+            if (Array.isArray(value)) {
+              return value
+                .map((item) => formatSection(item))
+                .filter(Boolean)
+                .map((item) => `- ${item}`)
+                .join("\n");
+            }
+            if (value && typeof value === "object") {
+              return Object.entries(value as Record<string, unknown>)
+                .map(([entryKey, entryValue]) => {
+                  const formattedValue = formatSection(entryValue);
+                  if (!formattedValue) return "";
+                  const label = entryKey.replace(/_/g, " ");
+                  return `${label.charAt(0).toUpperCase() + label.slice(1)}: ${formattedValue}`;
+                })
+                .filter(Boolean)
+                .join("\n");
+            }
+            return "";
+          };
+
           for (const [key, category] of Object.entries(categoryMap)) {
-            if (parsed[key] && typeof parsed[key] === "string" && parsed[key].trim().length > 10) {
+            const formattedContent = formatSection(parsed[key]);
+            if (formattedContent.length > 10) {
               const entry = await storage.createKnowledgeBaseEntry({
                 clientId,
                 category,
                 title: `${key.charAt(0).toUpperCase() + key.slice(1)} — ${url}`,
-                content: parsed[key],
+                content: formattedContent,
               });
               createdEntries.push(entry);
             }
