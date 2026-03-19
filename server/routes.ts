@@ -25,6 +25,33 @@ const GOOGLE_AI_API_KEY = process.env.GOOGLE_AI_API_KEY ?? "";
 const FIRECRAWL_API_KEY = process.env.FIRECRAWL_API_KEY ?? "";
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY ?? "";
 
+function parseDataUri(dataUri: string) {
+  const match = dataUri.match(/^data:(.+);base64,(.+)$/);
+  if (!match) return null;
+  return {
+    mimeType: match[1],
+    data: match[2],
+  };
+}
+
+function normalizeHexPalette(value: unknown): string[] {
+  const source = Array.isArray(value) ? value : [];
+  const cleaned = source
+    .map((item) => (typeof item === "string" ? item.trim().toUpperCase() : ""))
+    .filter((item) => /^#([0-9A-F]{6})$/.test(item));
+
+  return Array.from(new Set(cleaned)).slice(0, 6);
+}
+
+function normalizeTypography(value: unknown): string[] {
+  const source = Array.isArray(value) ? value : [];
+  const cleaned = source
+    .map((item) => (typeof item === "string" ? item.trim() : ""))
+    .filter((item) => item.length > 0);
+
+  return Array.from(new Set(cleaned)).slice(0, 4);
+}
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
@@ -110,6 +137,133 @@ export async function registerRoutes(
     const client = await storage.updateClient(req.params.id, req.body);
     if (!client) return res.status(404).json({ message: "Client not found" });
     res.json(client);
+  });
+
+  app.post("/api/clients/:id/analyze-brand-logo", async (req, res) => {
+    try {
+      const { imageData } = req.body;
+      if (!imageData || typeof imageData !== "string") {
+        return res.status(400).json({ message: "imageData is required" });
+      }
+
+      const client = await storage.getClient(req.params.id);
+      if (!client) return res.status(404).json({ message: "Client not found" });
+
+      const parsedImage = parseDataUri(imageData);
+      if (!parsedImage) {
+        return res.status(400).json({ message: "imageData must be a base64 data URI" });
+      }
+
+      let analysisText = "";
+
+      if (GOOGLE_AI_API_KEY) {
+        try {
+          const { GoogleGenerativeAI } = await import("@google/generative-ai");
+          const genAI = new GoogleGenerativeAI(GOOGLE_AI_API_KEY);
+          const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+          const result = await model.generateContent({
+            contents: [
+              {
+                role: "user",
+                parts: [
+                  {
+                    text: `Analyze this uploaded brand logo for a client profile.
+
+Client name: ${client.businessName}
+Industry: ${client.industry || "Unknown"}
+
+Return only valid JSON with this exact shape:
+{
+  "brandColors": ["#112233", "#445566"],
+  "brandTypography": ["Primary logo style - Geometric sans serif", "Suggested companion - Humanist sans serif"],
+  "brandSummary": "One sentence summary of the logo style"
+}
+
+Rules:
+- Include 3 to 6 hex colors that actually appear in the logo artwork.
+- Prefer dominant brand colors, not background noise.
+- brandTypography should describe the visible style or closest common family, not invent a proprietary font.
+- If the logo is icon-only, infer the likely typography direction from the mark.
+- Do not wrap the JSON in markdown fences.`,
+                  },
+                  {
+                    inlineData: {
+                      mimeType: parsedImage.mimeType,
+                      data: parsedImage.data,
+                    },
+                  },
+                ],
+              },
+            ],
+          });
+          analysisText = result.response.text();
+        } catch (error: any) {
+          console.error("Gemini brand logo analysis error:", error.message);
+        }
+      }
+
+      if (!analysisText && OPENAI_API_KEY) {
+        try {
+          const OpenAI = (await import("openai")).default;
+          const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
+          const completion = await openai.chat.completions.create({
+            model: "gpt-4o-mini",
+            response_format: { type: "json_object" },
+            messages: [
+              {
+                role: "user",
+                content: [
+                  {
+                    type: "text",
+                    text: `Analyze this uploaded brand logo for a client profile.
+
+Client name: ${client.businessName}
+Industry: ${client.industry || "Unknown"}
+
+Return only valid JSON with this exact shape:
+{
+  "brandColors": ["#112233", "#445566"],
+  "brandTypography": ["Primary logo style - Geometric sans serif", "Suggested companion - Humanist sans serif"],
+  "brandSummary": "One sentence summary of the logo style"
+}`,
+                  },
+                  {
+                    type: "image_url",
+                    image_url: {
+                      url: imageData,
+                    },
+                  },
+                ],
+              },
+            ],
+          });
+          analysisText = completion.choices[0]?.message?.content ?? "";
+        } catch (error: any) {
+          console.error("OpenAI brand logo analysis error:", error.message);
+        }
+      }
+
+      if (!analysisText) {
+        return res.status(503).json({
+          message: "No vision model is configured for logo analysis",
+        });
+      }
+
+      const cleanedJson = analysisText.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+      const parsed = JSON.parse(cleanedJson);
+      const brandColors = normalizeHexPalette(parsed.brandColors);
+      const brandTypography = normalizeTypography(parsed.brandTypography);
+      const brandSummary =
+        typeof parsed.brandSummary === "string" ? parsed.brandSummary.trim() : "";
+
+      res.json({
+        brandColors,
+        brandTypography,
+        brandSummary,
+      });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
   });
 
   app.delete("/api/clients/:id", async (req, res) => {

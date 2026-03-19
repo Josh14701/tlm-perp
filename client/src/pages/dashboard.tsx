@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { formatDistanceToNow, parse, format } from "date-fns";
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -243,11 +243,11 @@ function RevenueGoalDialog({
   const [target, setTarget] = useState(editingGoal?.target?.toString() ?? "");
   const [period, setPeriod] = useState(editingGoal?.period ?? "");
 
-  useState(() => {
+  useEffect(() => {
     setType(editingGoal?.type ?? "monthly");
     setTarget(editingGoal?.target?.toString() ?? "");
     setPeriod(editingGoal?.period ?? "");
-  });
+  }, [editingGoal, open]);
 
   const createMutation = useMutation({
     mutationFn: async () => {
@@ -429,14 +429,14 @@ export default function Dashboard() {
         </div>
       </header>
 
-      <div className="mx-auto max-w-[1460px] space-y-6 p-4 md:p-6">
-        <div className="grid gap-4 xl:grid-cols-[1.45fr_0.9fr]">
+      <div className="mx-auto max-w-[1380px] space-y-5 p-4 md:p-6">
+        <div className="grid gap-5 xl:grid-cols-[1.45fr_0.9fr]">
           <Card className="glass-card overflow-hidden" data-testid="dashboard-hero">
             <CardContent className="p-6 md:p-7">
               <div className="grid gap-6 lg:grid-cols-[1.3fr_0.95fr] lg:items-start">
-                <div className="space-y-6">
+                <div className="space-y-5">
                   <div className="space-y-3">
-                    <Badge variant="outline" className="border-white/50 bg-white/45 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-orange-700 dark:text-orange-300">
+                    <Badge variant="outline" className="border-white/50 bg-white/45 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-700 dark:text-slate-200">
                       Agency cockpit
                     </Badge>
                     <div className="space-y-2">
@@ -497,13 +497,36 @@ export default function Dashboard() {
                           {monthlyGoal ? "Monthly target progress" : "No monthly goal yet"}
                         </p>
                       </div>
-                      <div className="rounded-2xl bg-orange-500/12 p-2 text-orange-600 dark:text-orange-300">
-                        <Target className="h-4 w-4" />
+                      <div className="flex items-center gap-2">
+                        {monthlyGoal && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-xl"
+                            onClick={() => {
+                              setEditingGoal(monthlyGoal);
+                              setGoalDialogOpen(true);
+                            }}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 rounded-xl"
+                          onClick={() => {
+                            setEditingGoal(monthlyGoal ?? null);
+                            setGoalDialogOpen(true);
+                          }}
+                        >
+                          {monthlyGoal ? <Plus className="h-3.5 w-3.5" /> : <Target className="h-3.5 w-3.5" />}
+                        </Button>
                       </div>
                     </div>
                     <div className="mt-5 h-2 overflow-hidden rounded-full bg-white/50 dark:bg-white/8">
                       <div
-                        className="h-full rounded-full bg-gradient-to-r from-orange-400 via-amber-300 to-orange-500 transition-all duration-500"
+                        className="h-full rounded-full bg-gradient-to-r from-slate-900 via-sky-500 to-cyan-400 transition-all duration-500 dark:from-slate-100 dark:via-sky-400 dark:to-cyan-300"
                         style={{ width: `${Math.min(goalPct, 100)}%` }}
                       />
                     </div>
@@ -515,6 +538,9 @@ export default function Dashboard() {
                         {formatAUD(goalTarget)}
                       </span>
                     </div>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      {monthlyGoal ? "Edit or replace your target directly from here." : "Create a goal to start tracking revenue progress."}
+                    </p>
                   </div>
 
                   <div className="grid gap-3 sm:grid-cols-2">

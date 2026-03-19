@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { useForm } from "react-hook-form";
@@ -309,6 +309,72 @@ const kbEntrySchema = z.object({
 
 type KBEntryValues = z.infer<typeof kbEntrySchema>;
 
+function inferFallbackTypography(client: Client): string[] {
+  const industry = client.industry?.toLowerCase() ?? "";
+
+  if (industry.includes("law") || industry.includes("finance")) {
+    return ["Primary style - Serif wordmark", "Supporting style - Classic editorial serif"];
+  }
+
+  if (industry.includes("beauty") || industry.includes("fashion") || industry.includes("lifestyle")) {
+    return ["Primary style - Elegant high-contrast serif", "Supporting style - Clean modern sans serif"];
+  }
+
+  return ["Primary style - Modern sans serif", "Supporting style - Neutral grotesk sans serif"];
+}
+
+async function extractDominantColors(dataUri: string): Promise<string[]> {
+  return new Promise((resolve) => {
+    const img = new window.Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        resolve(["#64748B", "#CBD5E1", "#0F172A"]);
+        return;
+      }
+
+      const sampleWidth = 120;
+      const scale = Math.max(img.width, img.height) / sampleWidth || 1;
+      canvas.width = Math.max(1, Math.round(img.width / scale));
+      canvas.height = Math.max(1, Math.round(img.height / scale));
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+      const colorCounts: Record<string, number> = {};
+
+      for (let i = 0; i < imageData.length; i += 12) {
+        const r = imageData[i];
+        const g = imageData[i + 1];
+        const b = imageData[i + 2];
+        const a = imageData[i + 3];
+
+        if (a < 140) continue;
+
+        const brightness = r + g + b;
+        if (brightness > 735 || brightness < 45) continue;
+
+        const qr = Math.round(r / 24) * 24;
+        const qg = Math.round(g / 24) * 24;
+        const qb = Math.round(b / 24) * 24;
+        const hex = `#${qr.toString(16).padStart(2, "0")}${qg.toString(16).padStart(2, "0")}${qb.toString(16).padStart(2, "0")}`.toUpperCase();
+        colorCounts[hex] = (colorCounts[hex] || 0) + 1;
+      }
+
+      const palette = Object.entries(colorCounts)
+        .sort((a, b) => b[1] - a[1])
+        .map(([hex]) => hex)
+        .slice(0, 6);
+
+      resolve(palette.length > 0 ? palette : ["#64748B", "#CBD5E1", "#0F172A"]);
+    };
+
+    img.onerror = () => resolve(["#64748B", "#CBD5E1", "#0F172A"]);
+    img.src = dataUri;
+  });
+}
+
 function KnowledgeBaseTab({ clientId, client }: { clientId: string; client: Client }) {
   const { toast } = useToast();
   const [addCategory, setAddCategory] = useState<string | null>(null);
@@ -610,9 +676,20 @@ function KBEntryDialog({
 
 function BrandGuidelinesTab({ clientId, client }: { clientId: string; client: Client }) {
   const { toast } = useToast();
+  const [analysisSummary, setAnalysisSummary] = useState<string | null>(null);
+  const brandColors = (client as any).brandColors as string[] | null;
+  const brandLogo = (client as any).brandLogo as string | null;
+  const brandTypography = (client as any).brandTypography as string[] | null;
+  const [draftColors, setDraftColors] = useState<string[]>(brandColors ?? []);
+  const [draftTypography, setDraftTypography] = useState<string[]>(brandTypography ?? []);
 
-  const updateBrandMutation = useMutation({
-    mutationFn: async (data: { brandLogo?: string; brandColors?: string[]; brandTypography?: string[] }) => {
+  useEffect(() => {
+    setDraftColors(brandColors ?? []);
+    setDraftTypography(brandTypography ?? []);
+  }, [clientId, brandColors, brandTypography]);
+
+  const saveBrandMutation = useMutation({
+    mutationFn: async (data: { brandLogo?: string | null; brandColors?: string[] | null; brandTypography?: string[] | null }) => {
       const res = await apiRequest("PATCH", `/api/clients/${clientId}`, data);
       return res.json();
     },
@@ -625,7 +702,18 @@ function BrandGuidelinesTab({ clientId, client }: { clientId: string; client: Cl
     },
   });
 
-  function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  const analyzeBrandMutation = useMutation({
+    mutationFn: async (data: { imageData: string }) => {
+      const res = await apiRequest("POST", `/api/clients/${clientId}/analyze-brand-logo`, data);
+      return res.json() as Promise<{
+        brandColors?: string[];
+        brandTypography?: string[];
+        brandSummary?: string;
+      }>;
+    },
+  });
+
+  async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) {
@@ -634,81 +722,117 @@ function BrandGuidelinesTab({ clientId, client }: { clientId: string; client: Cl
     }
 
     const reader = new FileReader();
-    reader.onload = () => {
+    reader.onload = async () => {
       const dataUri = reader.result as string;
+      const fallbackColors = await extractDominantColors(dataUri);
+      const fallbackTypography = inferFallbackTypography(client);
 
-      // Extract colors from the image using canvas
-      const img = new window.Image();
-      img.crossOrigin = "anonymous";
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d");
-        if (!ctx) return;
+      try {
+        const analysis = await analyzeBrandMutation.mutateAsync({ imageData: dataUri });
+        setAnalysisSummary(analysis.brandSummary ?? null);
+        const nextColors = analysis.brandColors?.length ? analysis.brandColors : fallbackColors;
+        const nextTypography = analysis.brandTypography?.length ? analysis.brandTypography : fallbackTypography;
+        setDraftColors(nextColors);
+        setDraftTypography(nextTypography);
 
-        canvas.width = img.width;
-        canvas.height = img.height;
-        ctx.drawImage(img, 0, 0);
-
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const pixels = imageData.data;
-
-        // Simple color extraction: sample pixels and find dominant colors
-        const colorCounts: Record<string, number> = {};
-        for (let i = 0; i < pixels.length; i += 16) { // sample every 4th pixel
-          const r = pixels[i];
-          const g = pixels[i + 1];
-          const b = pixels[i + 2];
-          const a = pixels[i + 3];
-          if (a < 128) continue; // skip transparent
-
-          // Quantize to reduce unique colors
-          const qr = Math.round(r / 32) * 32;
-          const qg = Math.round(g / 32) * 32;
-          const qb = Math.round(b / 32) * 32;
-
-          // Skip near-white and near-black
-          if (qr + qg + qb > 700 || qr + qg + qb < 60) continue;
-
-          const hex = `#${qr.toString(16).padStart(2, "0")}${qg.toString(16).padStart(2, "0")}${qb.toString(16).padStart(2, "0")}`;
-          colorCounts[hex] = (colorCounts[hex] || 0) + 1;
-        }
-
-        // Sort by frequency and take top 6
-        const sortedColors = Object.entries(colorCounts)
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 6)
-          .map(([hex]) => hex);
-
-        // Detect typography (heuristic based on logo style)
-        const typography = ["Sans-serif"];
-        if (client.industry?.toLowerCase().includes("law") || client.industry?.toLowerCase().includes("finance")) {
-          typography[0] = "Serif";
-        }
-
-        updateBrandMutation.mutate({
+        await saveBrandMutation.mutateAsync({
           brandLogo: dataUri,
-          brandColors: sortedColors.length > 0 ? sortedColors : ["#4f46e5", "#06b6d4", "#10b981"],
-          brandTypography: typography,
+          brandColors: nextColors,
+          brandTypography: nextTypography,
         });
-      };
-      img.src = dataUri;
+      } catch (error: any) {
+        setAnalysisSummary(null);
+        setDraftColors(fallbackColors);
+        setDraftTypography(fallbackTypography);
+        await saveBrandMutation.mutateAsync({
+          brandLogo: dataUri,
+          brandColors: fallbackColors,
+          brandTypography: fallbackTypography,
+        });
+        toast({
+          title: "Saved with fallback analysis",
+          description: "The logo was uploaded, but AI analysis was unavailable so a local palette was used.",
+        });
+      }
     };
     reader.readAsDataURL(file);
   }
 
-  const brandColors = (client as any).brandColors as string[] | null;
-  const brandLogo = (client as any).brandLogo as string | null;
-  const brandTypography = (client as any).brandTypography as string[] | null;
+  const normalizedOriginalColors = (brandColors ?? []).map((color) => color.trim().toUpperCase());
+  const normalizedOriginalTypography = (brandTypography ?? []).map((font) => font.trim());
+  const normalizedDraftColors = draftColors.map((color) => color.trim().toUpperCase()).filter(Boolean);
+  const normalizedDraftTypography = draftTypography.map((font) => font.trim()).filter(Boolean);
+  const hasManualChanges =
+    JSON.stringify(normalizedDraftColors) !== JSON.stringify(normalizedOriginalColors) ||
+    JSON.stringify(normalizedDraftTypography) !== JSON.stringify(normalizedOriginalTypography);
+
+  async function saveManualBrandEdits() {
+    await saveBrandMutation.mutateAsync({
+      brandColors: normalizedDraftColors,
+      brandTypography: normalizedDraftTypography,
+    });
+  }
+
+  async function removeLogo() {
+    setAnalysisSummary(null);
+    await saveBrandMutation.mutateAsync({
+      brandLogo: null,
+      brandColors: normalizedDraftColors,
+      brandTypography: normalizedDraftTypography,
+    });
+  }
 
   return (
     <div className="space-y-6" data-testid="tab-brand-guidelines">
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Palette className="h-4 w-4" />
-        <span>Upload a logo to automatically extract brand colors and typography.</span>
-      </div>
+      <Card className="glass-card">
+        <CardContent className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between">
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <Palette className="h-4 w-4 text-primary" />
+              Brand intelligence
+            </div>
+            <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
+              Upload a clean logo file and we&apos;ll extract a usable palette and typography direction for the client profile and creative tools.
+            </p>
+            {analysisSummary && (
+              <p className="text-sm text-muted-foreground">
+                {analysisSummary}
+              </p>
+            )}
+          </div>
+          <label className="cursor-pointer">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleLogoUpload}
+              className="hidden"
+              data-testid="input-logo-upload"
+            />
+            <Button variant="outline" size="sm" asChild>
+              <span>
+                <Upload className="mr-1.5 h-3.5 w-3.5" />
+                {brandLogo ? "Replace Logo" : "Upload Logo"}
+              </span>
+            </Button>
+          </label>
+        </CardContent>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/20 px-5 py-4 dark:border-white/8">
+          <p className="text-xs text-muted-foreground">
+            Adjust the AI suggestions before saving if you want tighter brand control.
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={!hasManualChanges || saveBrandMutation.isPending}
+            onClick={() => saveManualBrandEdits()}
+          >
+            {saveBrandMutation.isPending ? "Saving..." : "Save Brand Edits"}
+          </Button>
+        </div>
+      </Card>
 
       {/* Logo Section */}
-      <Card>
+      <Card className="glass-card">
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-medium flex items-center gap-2">
             <Upload className="h-4 w-4 text-muted-foreground" />
@@ -716,40 +840,40 @@ function BrandGuidelinesTab({ clientId, client }: { clientId: string; client: Cl
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-6">
+          <div className="flex flex-col gap-6 md:flex-row md:items-center">
             {brandLogo ? (
-              <div className="w-32 h-32 rounded-lg border bg-white flex items-center justify-center p-2">
+              <div className="flex h-36 w-36 items-center justify-center rounded-[24px] border border-white/45 bg-white/80 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] dark:border-white/10 dark:bg-white/6">
                 <img src={brandLogo} alt="Brand logo" className="max-w-full max-h-full object-contain" data-testid="img-brand-logo" />
               </div>
             ) : (
-              <div className="w-32 h-32 rounded-lg border-2 border-dashed bg-muted/30 flex items-center justify-center">
+              <div className="flex h-36 w-36 items-center justify-center rounded-[24px] border-2 border-dashed border-white/50 bg-white/35 dark:border-white/10 dark:bg-white/6">
                 <Upload className="h-8 w-8 text-muted-foreground/40" />
               </div>
             )}
-            <div className="space-y-2">
-              <label className="cursor-pointer">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleLogoUpload}
-                  className="hidden"
-                  data-testid="input-logo-upload"
-                />
-                <Button variant="outline" size="sm" asChild>
-                  <span>
-                    <Upload className="h-3.5 w-3.5 mr-1.5" />
-                    {brandLogo ? "Replace Logo" : "Upload Logo"}
-                  </span>
-                </Button>
-              </label>
-              <p className="text-xs text-muted-foreground">
-                PNG, JPG, SVG up to 5MB. Colors will be extracted automatically.
+            <div className="space-y-3">
+              <p className="text-sm font-medium text-foreground">
+                Preferred upload: transparent PNG or SVG
               </p>
-              {updateBrandMutation.isPending && (
+              <p className="max-w-md text-sm leading-6 text-muted-foreground">
+                PNG, JPG, or SVG up to 5MB. The upload now runs through AI-assisted logo analysis, with a fallback palette if the model can&apos;t confidently read the artwork.
+              </p>
+              {(saveBrandMutation.isPending || analyzeBrandMutation.isPending) && (
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Loader2 className="h-3 w-3 animate-spin" />
-                  Extracting brand colors...
+                  Analyzing logo and saving brand guidelines...
                 </div>
+              )}
+              {brandLogo && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="justify-start px-0 text-rose-600 hover:text-rose-600 dark:text-rose-400"
+                  onClick={() => removeLogo()}
+                  disabled={saveBrandMutation.isPending}
+                >
+                  <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                  Delete logo
+                </Button>
               )}
             </div>
           </div>
@@ -757,7 +881,7 @@ function BrandGuidelinesTab({ clientId, client }: { clientId: string; client: Cl
       </Card>
 
       {/* Brand Colors */}
-      <Card>
+      <Card className="glass-card">
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-medium flex items-center gap-2">
             <Palette className="h-4 w-4 text-muted-foreground" />
@@ -765,30 +889,64 @@ function BrandGuidelinesTab({ clientId, client }: { clientId: string; client: Cl
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {brandColors && brandColors.length > 0 ? (
+          {draftColors.length > 0 ? (
             <div className="space-y-3">
               <div className="flex gap-3 flex-wrap">
-                {brandColors.map((color, i) => (
-                  <div key={i} className="flex flex-col items-center gap-1.5" data-testid={`brand-color-${i}`}>
+                {draftColors.map((color, i) => (
+                  <div key={i} className="flex flex-col items-center gap-2" data-testid={`brand-color-${i}`}>
                     <div
-                      className="w-14 h-14 rounded-lg border shadow-sm"
+                      className="h-16 w-16 rounded-2xl border border-white/50 shadow-sm"
                       style={{ backgroundColor: color }}
                     />
-                    <span className="text-xs font-mono text-muted-foreground">{color}</span>
+                    <Input
+                      value={color}
+                      onChange={(e) => {
+                        const next = [...draftColors];
+                        next[i] = e.target.value;
+                        setDraftColors(next);
+                      }}
+                      className="h-9 w-32 text-center font-mono text-xs"
+                    />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 text-xs text-muted-foreground"
+                      onClick={() => setDraftColors(draftColors.filter((_, idx) => idx !== i))}
+                    >
+                      Remove
+                    </Button>
                   </div>
                 ))}
               </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setDraftColors([...draftColors, "#94A3B8"])}
+              >
+                <Plus className="mr-1.5 h-3.5 w-3.5" />
+                Add Color
+              </Button>
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground/60">
-              No brand colors extracted yet. Upload a logo to auto-detect colors.
-            </p>
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground/60">
+                No brand colors extracted yet. Upload a logo to auto-detect colors or add them manually.
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setDraftColors(["#94A3B8"])}
+              >
+                <Plus className="mr-1.5 h-3.5 w-3.5" />
+                Add First Color
+              </Button>
+            </div>
           )}
         </CardContent>
       </Card>
 
       {/* Typography */}
-      <Card>
+      <Card className="glass-card">
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-medium flex items-center gap-2">
             <Type className="h-4 w-4 text-muted-foreground" />
@@ -796,21 +954,57 @@ function BrandGuidelinesTab({ clientId, client }: { clientId: string; client: Cl
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {brandTypography && brandTypography.length > 0 ? (
-            <div className="space-y-2">
-              {brandTypography.map((font, i) => (
-                <div key={i} className="flex items-center gap-3" data-testid={`brand-font-${i}`}>
-                  <Badge variant="outline">{font}</Badge>
-                  <span className="text-sm" style={{ fontFamily: font.toLowerCase().includes("serif") ? "Georgia, serif" : "system-ui, sans-serif" }}>
+          {draftTypography.length > 0 ? (
+            <div className="space-y-3">
+              {draftTypography.map((font, i) => (
+                <div key={i} className="rounded-2xl border border-white/35 bg-white/25 p-3 dark:border-white/8 dark:bg-white/5" data-testid={`brand-font-${i}`}>
+                  <div className="flex items-start justify-between gap-3">
+                    <Input
+                      value={font}
+                      onChange={(e) => {
+                        const next = [...draftTypography];
+                        next[i] = e.target.value;
+                        setDraftTypography(next);
+                      }}
+                      className="h-10 flex-1"
+                    />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-10 px-3 text-xs text-muted-foreground"
+                      onClick={() => setDraftTypography(draftTypography.filter((_, idx) => idx !== i))}
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                  <span className="mt-3 block text-sm" style={{ fontFamily: font.toLowerCase().includes("serif") ? "Georgia, serif" : "system-ui, sans-serif" }}>
                     The quick brown fox jumps over the lazy dog
                   </span>
                 </div>
               ))}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setDraftTypography([...draftTypography, "Primary style - Modern sans serif"])}
+              >
+                <Plus className="mr-1.5 h-3.5 w-3.5" />
+                Add Typography Note
+              </Button>
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground/60">
-              No typography detected yet. Upload a logo to get started.
-            </p>
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground/60">
+                No typography detected yet. Upload a logo to get started or add your own brand type notes.
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setDraftTypography(["Primary style - Modern sans serif"])}
+              >
+                <Plus className="mr-1.5 h-3.5 w-3.5" />
+                Add Typography Note
+              </Button>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -1166,9 +1360,9 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
         </div>
       ) : (
         <>
-          <div className="p-6">
+          <div className="mx-auto max-w-[1360px] p-4 md:p-6">
             <Tabs defaultValue="knowledge-base" data-testid="client-tabs">
-              <TabsList className="mb-4" data-testid="client-tabs-list">
+              <TabsList className="mb-5 h-auto flex-wrap justify-start gap-2 rounded-[22px] p-1.5" data-testid="client-tabs-list">
                 <TabsTrigger value="knowledge-base" data-testid="tab-trigger-kb">
                   <Brain className="h-3.5 w-3.5 mr-1.5" />
                   Knowledge Base
