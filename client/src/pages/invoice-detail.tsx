@@ -1,5 +1,5 @@
 import { useState, useRef, useMemo, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
@@ -15,8 +15,12 @@ import {
   ExternalLink,
   Pencil,
   Check,
+  Save,
+  Loader2,
 } from "lucide-react";
 import type { Client, InvoiceDraft } from "@shared/schema";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import tlmLogo from "@/assets/tlm-logo.png";
 
 /* ─── Types ───────────────────────────────────────── */
@@ -229,6 +233,46 @@ export default function InvoiceDetail({ params }: { params: { id: string } }) {
   const [amountPaid, setAmountPaid] = useState(0);
   const [stripeTotal, setStripeTotal] = useState(0);
 
+  const { toast } = useToast();
+
+  // Save mutation for local drafts
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      if (!localDraft) throw new Error("No draft to save");
+      const payload = {
+        title: lineItems[0]?.description || "Invoice",
+        recipientName: billToName,
+        recipientEmail: billToEmail || null,
+        billingCompany: fromName || null,
+        billingAbn: fromAbn || null,
+        notes: customNotes || null,
+        currency,
+        lineItems: lineItems.map((li) => ({
+          description: li.description,
+          quantity: li.quantity,
+          unitAmount: li.unitAmount,
+        })),
+      };
+      const res = await apiRequest("PATCH", `/api/invoice-drafts/${params.id}`, payload);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/invoice-drafts/${params.id}`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/invoice-drafts"] });
+      toast({ title: "Invoice saved", description: "Your changes have been saved." });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Save failed", description: err.message, variant: "destructive" });
+    },
+  });
+
+  function handleSave() {
+    if (!isStripe && localDraft) {
+      saveMutation.mutate();
+    }
+    setEditing(false);
+  }
+
   // Initialize from loaded data
   useEffect(() => {
     if (initialized || isLoading) return;
@@ -393,10 +437,29 @@ export default function InvoiceDetail({ params }: { params: { id: string } }) {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            {editing && !isStripe && (
+              <Button
+                size="sm"
+                onClick={handleSave}
+                disabled={saveMutation.isPending}
+              >
+                {saveMutation.isPending ? (
+                  <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" />Saving...</>
+                ) : (
+                  <><Save className="h-4 w-4 mr-1.5" />Save Changes</>
+                )}
+              </Button>
+            )}
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setEditing(!editing)}
+              onClick={() => {
+                if (editing) {
+                  handleSave();
+                } else {
+                  setEditing(true);
+                }
+              }}
             >
               {editing ? (
                 <><Check className="h-4 w-4 mr-1.5" />Done Editing</>
