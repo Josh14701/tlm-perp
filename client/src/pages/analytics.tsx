@@ -193,7 +193,7 @@ export default function Analytics() {
       return res.json();
     },
     onSuccess: (data: { token: string }) => {
-      const url = `${window.location.origin}/#/share/${data.token}`;
+      const url = `${window.location.origin}/public/${data.token}`;
       navigator.clipboard?.writeText(url);
       toast({
         title: "Share link created",

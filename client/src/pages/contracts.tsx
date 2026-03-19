@@ -572,7 +572,7 @@ function ContractDetailDialog({
     },
     onSuccess: (data: ShareLink) => {
       queryClient.invalidateQueries({ queryKey: ["/api/contracts"] });
-      const link = `${window.location.origin}/#/share/${data.token}`;
+      const link = `${window.location.origin}/public/${data.token}`;
       setShareLink(link);
       toast({ title: "Share link created", description: "The contract share link has been generated." });
     },

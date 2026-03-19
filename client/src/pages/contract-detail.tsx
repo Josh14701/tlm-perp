@@ -231,7 +231,7 @@ export default function ContractDetail({ params }: { params: { id: string } }) {
       return res.json() as Promise<ShareLink>;
     },
     onSuccess: (data: ShareLink) => {
-      const link = `${window.location.origin}/#/public/${data.token}`;
+      const link = `${window.location.origin}/public/${data.token}`;
       setClientShareLink(link);
       queryClient.invalidateQueries({ queryKey: ["/api/contracts"] });
       toast({ title: "Client link created", description: "Shareable signing link generated." });

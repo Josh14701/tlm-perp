@@ -205,6 +205,55 @@ export const insertShareLinkSchema = createInsertSchema(shareLinks).omit({ id: t
 export type InsertShareLink = z.infer<typeof insertShareLinkSchema>;
 export type ShareLink = typeof shareLinks.$inferSelect;
 
+// ── Share Feedback ────────────────────────────────
+export const shareFeedback = pgTable("share_feedback", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  shareLinkId: varchar("share_link_id").notNull(),
+  resourceType: text("resource_type").notNull(), // plan, contract
+  resourceId: varchar("resource_id").notNull(),
+  kind: text("kind").notNull().default("comment"), // comment, approval, revision_request
+  authorName: text("author_name"),
+  authorEmail: text("author_email"),
+  message: text("message"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertShareFeedbackSchema = createInsertSchema(shareFeedback).omit({ id: true, createdAt: true });
+export type InsertShareFeedback = z.infer<typeof insertShareFeedbackSchema>;
+export type ShareFeedback = typeof shareFeedback.$inferSelect;
+
+// ── Invoice Drafts ────────────────────────────────
+export const invoiceDrafts = pgTable("invoice_drafts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  clientId: varchar("client_id").notNull(),
+  contractId: varchar("contract_id"),
+  title: text("title").notNull(),
+  recipientName: text("recipient_name").notNull(),
+  recipientEmail: text("recipient_email"),
+  billingCompany: text("billing_company"),
+  billingAbn: text("billing_abn"),
+  currency: text("currency").notNull().default("aud"),
+  lineItems: jsonb("line_items").$type<Array<{ description: string; quantity: number; unitAmount: number }>>(),
+  notes: text("notes"),
+  paymentTerms: text("payment_terms"),
+  dueInDays: integer("due_in_days").default(14),
+  status: text("status").notNull().default("draft"), // draft, synced, sent, paid
+  stripeInvoiceId: text("stripe_invoice_id"),
+  stripeInvoiceUrl: text("stripe_invoice_url"),
+  stripeInvoicePdf: text("stripe_invoice_pdf"),
+  lastSyncedAt: timestamp("last_synced_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertInvoiceDraftSchema = createInsertSchema(invoiceDrafts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertInvoiceDraft = z.infer<typeof insertInvoiceDraftSchema>;
+export type InvoiceDraft = typeof invoiceDrafts.$inferSelect;
+
 // ── Generated Images ───────────────────────────────
 export const generatedImages = pgTable("generated_images", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),

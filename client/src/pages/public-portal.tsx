@@ -1,9 +1,10 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Label } from "@/components/ui/label";
@@ -29,6 +30,9 @@ import {
   Clock,
   AlertTriangle,
   Zap,
+  MessageSquare,
+  SendHorizontal,
+  RotateCcw,
 } from "lucide-react";
 import {
   AreaChart,
@@ -867,8 +871,12 @@ function PublicContract({ data, clientName, token }: { data: any; clientName?: s
 
 // ── Public Plan Approval ──────────────────────────────
 function PublicPlan({ data, clientName, token }: { data: any; clientName?: string; token: string }) {
+  const queryClient = useQueryClient();
   const { toast } = useToast();
   const [approved, setApproved] = useState(data?.status === "approved");
+  const [reviewerName, setReviewerName] = useState("");
+  const [reviewerEmail, setReviewerEmail] = useState("");
+  const [feedbackMessage, setFeedbackMessage] = useState("");
 
   const plan = data || {};
   const ideas = plan.ideas || [];
@@ -886,12 +894,16 @@ function PublicPlan({ data, clientName, token }: { data: any; clientName?: strin
   const approveMutation = useMutation({
     mutationFn: async () => {
       const res = await apiRequest("PATCH", `/api/share/${token}/approve`, {
-        status: "approved",
+        authorName: reviewerName || undefined,
+        authorEmail: reviewerEmail || undefined,
+        message: feedbackMessage || undefined,
       });
       return res.json();
     },
     onSuccess: () => {
       setApproved(true);
+      setFeedbackMessage("");
+      queryClient.invalidateQueries({ queryKey: ["/api/share-feedback", token] });
       toast({ title: "Plan approved!" });
     },
     onError: (err: Error) => {
@@ -899,88 +911,274 @@ function PublicPlan({ data, clientName, token }: { data: any; clientName?: strin
     },
   });
 
-  return (
-    <div className="min-h-screen bg-gray-50 flex flex-col" data-testid="view-plan">
-      <TLMHeader clientName={clientName} />
-      <main className="flex-1 p-4 sm:p-6 max-w-3xl mx-auto w-full">
-        <div className="flex items-start justify-between gap-4 mb-6">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900" data-testid="text-plan-title">
-              {plan.title || "Content Plan"}
-            </h2>
-            {plan.description && (
-              <p className="text-sm text-gray-500 mt-1" data-testid="text-plan-description">
-                {plan.description}
-              </p>
-            )}
-          </div>
-          {approved ? (
-            <Badge className="bg-emerald-100 text-emerald-700 shrink-0" data-testid="badge-approved">
-              <CheckCircle2 className="mr-1 h-3 w-3" />
-              Approved
-            </Badge>
-          ) : (
-            <Badge variant="secondary" className="shrink-0" data-testid="badge-pending">
-              <Clock className="mr-1 h-3 w-3" />
-              Pending
-            </Badge>
-          )}
-        </div>
+  const requestChangesMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("PATCH", `/api/share/${token}/request-changes`, {
+        authorName: reviewerName || undefined,
+        authorEmail: reviewerEmail || undefined,
+        message: feedbackMessage || "Please revise this plan.",
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      setApproved(false);
+      setFeedbackMessage("");
+      queryClient.invalidateQueries({ queryKey: ["/api/share-feedback", token] });
+      toast({ title: "Revision request sent" });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    },
+  });
 
-        {/* Content Ideas */}
-        <div className="space-y-3 mb-6" data-testid="plan-ideas-list">
-          {ideas.length === 0 ? (
-            <Card className="bg-white">
-              <CardContent className="py-8 text-center text-sm text-gray-500" data-testid="text-no-ideas">
-                No content ideas in this plan yet.
+  const commentMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", `/api/share/${token}/feedback`, {
+        kind: "comment",
+        authorName: reviewerName || undefined,
+        authorEmail: reviewerEmail || undefined,
+        message: feedbackMessage,
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      setFeedbackMessage("");
+      queryClient.invalidateQueries({ queryKey: ["/api/share-feedback", token] });
+      toast({ title: "Feedback sent" });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const { data: feedbackEntries } = useQuery<any[]>({
+    queryKey: ["/api/share-feedback", token],
+    queryFn: async () => {
+      const res = await apiRequest("GET", `/api/share/${token}/feedback`);
+      return res.json();
+    },
+    enabled: !!token,
+  });
+
+  const reviewReady = reviewerName.trim().length > 0 || reviewerEmail.trim().length > 0;
+
+  return (
+    <div className="min-h-screen bg-[linear-gradient(180deg,#f8fbff_0%,#f4f1ff_100%)] flex flex-col" data-testid="view-plan">
+      <TLMHeader clientName={clientName} />
+      <main className="flex-1 px-4 py-6 sm:px-6 sm:py-8">
+        <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[1.45fr_0.85fr]">
+          <div className="space-y-6">
+            <Card className="border-white/60 bg-white/85 shadow-[0_20px_60px_rgba(108,99,255,0.08)] backdrop-blur-xl">
+              <CardContent className="space-y-5 p-6 sm:p-8">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div className="space-y-2">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-gray-500">
+                      Client Review
+                    </p>
+                    <h2 className="text-2xl font-semibold tracking-[-0.03em] text-gray-900" data-testid="text-plan-title">
+                      {plan.title || "Content Plan"}
+                    </h2>
+                    {plan.description && (
+                      <p className="max-w-2xl text-sm leading-6 text-gray-500" data-testid="text-plan-description">
+                        {plan.description}
+                      </p>
+                    )}
+                  </div>
+                  {approved ? (
+                    <Badge className="bg-emerald-100 text-emerald-700 shrink-0" data-testid="badge-approved">
+                      <CheckCircle2 className="mr-1 h-3 w-3" />
+                      Approved
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary" className="shrink-0" data-testid="badge-pending">
+                      <Clock className="mr-1 h-3 w-3" />
+                      In Review
+                    </Badge>
+                  )}
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-2xl border border-gray-200 bg-gray-50/80 p-4">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500">
+                      Ideas
+                    </p>
+                    <p className="mt-2 text-2xl font-semibold text-gray-900">{ideas.length}</p>
+                  </div>
+                  <div className="rounded-2xl border border-gray-200 bg-gray-50/80 p-4">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500">
+                      Client
+                    </p>
+                    <p className="mt-2 text-sm font-medium text-gray-900">{clientName || "Shared plan"}</p>
+                  </div>
+                  <div className="rounded-2xl border border-gray-200 bg-gray-50/80 p-4">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500">
+                      Status
+                    </p>
+                    <p className="mt-2 text-sm font-medium text-gray-900">
+                      {approved ? "Approved" : "Awaiting review"}
+                    </p>
+                  </div>
+                </div>
               </CardContent>
             </Card>
-          ) : (
-            ideas.map((idea: any, index: number) => (
-              <Card key={index} className="bg-white" data-testid={`idea-card-${index}`}>
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Badge
-                          className={`text-[10px] font-normal ${
-                            contentTypeColors[idea.type] || "bg-gray-100 text-gray-700"
-                          }`}
-                          data-testid={`badge-idea-type-${index}`}
-                        >
-                          {idea.type?.replace("_", " ") || "content"}
-                        </Badge>
-                        {idea.platform && (
-                          <span className="text-[10px] text-gray-400">{idea.platform}</span>
-                        )}
+
+            <div className="space-y-3" data-testid="plan-ideas-list">
+              {ideas.length === 0 ? (
+                <Card className="bg-white/85">
+                  <CardContent className="py-8 text-center text-sm text-gray-500" data-testid="text-no-ideas">
+                    No content ideas in this plan yet.
+                  </CardContent>
+                </Card>
+              ) : (
+                ideas.map((idea: any, index: number) => (
+                  <Card key={index} className="border-white/60 bg-white/88 shadow-[0_12px_36px_rgba(15,23,42,0.05)]" data-testid={`idea-card-${index}`}>
+                    <CardContent className="space-y-3 p-5">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-2 mb-2">
+                            <Badge
+                              className={`text-[10px] font-normal ${
+                                contentTypeColors[idea.type] || "bg-gray-100 text-gray-700"
+                              }`}
+                              data-testid={`badge-idea-type-${index}`}
+                            >
+                              {idea.type?.replace("_", " ") || "content"}
+                            </Badge>
+                            {idea.platform && (
+                              <span className="text-[11px] font-medium text-gray-400 uppercase tracking-[0.16em]">
+                                {idea.platform}
+                              </span>
+                            )}
+                          </div>
+                          <h4 className="text-base font-semibold text-gray-900" data-testid={`text-idea-title-${index}`}>
+                            {idea.title}
+                          </h4>
+                          {idea.concept && (
+                            <p className="mt-2 text-sm leading-6 text-gray-500" data-testid={`text-idea-concept-${index}`}>
+                              {idea.concept}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                      <h4 className="text-sm font-medium text-gray-900" data-testid={`text-idea-title-${index}`}>
-                        {idea.title}
-                      </h4>
-                      {idea.concept && (
-                        <p className="text-xs text-gray-500 mt-1" data-testid={`text-idea-concept-${index}`}>
-                          {idea.concept}
-                        </p>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <Card className="border-white/60 bg-white/88 shadow-[0_18px_48px_rgba(79,70,229,0.08)]">
+              <CardHeader>
+                <CardTitle className="text-base text-gray-900">Leave Feedback</CardTitle>
+                <CardDescription>
+                  Add comments, approve the plan, or request changes in one place.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="reviewer-name">Name</Label>
+                    <Input
+                      id="reviewer-name"
+                      value={reviewerName}
+                      onChange={(e) => setReviewerName(e.target.value)}
+                      placeholder="Your name"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="reviewer-email">Email</Label>
+                    <Input
+                      id="reviewer-email"
+                      type="email"
+                      value={reviewerEmail}
+                      onChange={(e) => setReviewerEmail(e.target.value)}
+                      placeholder="you@company.com"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="review-feedback">Feedback</Label>
+                    <Textarea
+                      id="review-feedback"
+                      value={feedbackMessage}
+                      onChange={(e) => setFeedbackMessage(e.target.value)}
+                      placeholder="Share edits, notes, or approval context..."
+                      rows={5}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid gap-2">
+                  <Button
+                    disabled={!reviewReady || approveMutation.isPending}
+                    onClick={() => approveMutation.mutate()}
+                    data-testid="button-approve-plan"
+                  >
+                    <CheckCircle2 className="mr-2 h-4 w-4" />
+                    {approveMutation.isPending ? "Approving..." : "Approve Plan"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    disabled={!feedbackMessage.trim() || requestChangesMutation.isPending}
+                    onClick={() => requestChangesMutation.mutate()}
+                  >
+                    <RotateCcw className="mr-2 h-4 w-4" />
+                    {requestChangesMutation.isPending ? "Sending..." : "Request Changes"}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    disabled={!feedbackMessage.trim() || commentMutation.isPending}
+                    onClick={() => commentMutation.mutate()}
+                  >
+                    <SendHorizontal className="mr-2 h-4 w-4" />
+                    {commentMutation.isPending ? "Sending..." : "Send Comment Only"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-white/60 bg-white/88">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base text-gray-900">
+                  <MessageSquare className="h-4 w-4" />
+                  Review History
+                </CardTitle>
+                <CardDescription>
+                  All client-side review activity for this shared plan.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {feedbackEntries?.length ? (
+                  feedbackEntries.map((entry) => (
+                    <div key={entry.id} className="rounded-2xl border border-gray-200 bg-gray-50/70 p-4">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="rounded-full capitalize">
+                            {entry.kind.replace("_", " ")}
+                          </Badge>
+                          <span className="text-sm font-medium text-gray-900">
+                            {entry.authorName || "Client reviewer"}
+                          </span>
+                        </div>
+                        <span className="text-xs text-gray-400">
+                          {entry.createdAt ? new Date(entry.createdAt).toLocaleString() : ""}
+                        </span>
+                      </div>
+                      {entry.authorEmail && (
+                        <p className="mt-2 text-xs text-gray-400">{entry.authorEmail}</p>
+                      )}
+                      {entry.message && (
+                        <p className="mt-2 text-sm leading-6 text-gray-600">{entry.message}</p>
                       )}
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
-          )}
+                  ))
+                ) : (
+                  <p className="text-sm text-gray-500">No feedback has been left yet.</p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
-
-        {!approved && (
-          <Button
-            className="w-full sm:w-auto"
-            disabled={approveMutation.isPending}
-            onClick={() => approveMutation.mutate()}
-            data-testid="button-approve-plan"
-          >
-            <CheckCircle2 className="mr-2 h-4 w-4" />
-            {approveMutation.isPending ? "Approving..." : "Approve Plan"}
-          </Button>
-        )}
       </main>
       <PortalFooter />
     </div>

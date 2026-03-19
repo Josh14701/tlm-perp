@@ -14,6 +14,8 @@ import {
   insertTeamInviteSchema,
   insertRevenueGoalSchema,
   insertShareLinkSchema,
+  insertShareFeedbackSchema,
+  insertInvoiceDraftSchema,
   insertUserSchema,
   insertAiSessionSchema,
   insertActivityLogSchema,
@@ -50,6 +52,71 @@ function normalizeTypography(value: unknown): string[] {
     .filter((item) => item.length > 0);
 
   return Array.from(new Set(cleaned)).slice(0, 4);
+}
+
+function truncateText(value: string, limit = 220): string {
+  if (value.length <= limit) return value;
+  return `${value.slice(0, limit).trim()}...`;
+}
+
+function buildClientBrandContext(client: any, kbEntries: Array<{ category: string; title: string; content: string }>) {
+  const sections: string[] = [];
+
+  if (client?.brandColors?.length) {
+    sections.push(`Brand colors: ${client.brandColors.join(", ")}`);
+  }
+
+  if (client?.brandTypography?.length) {
+    sections.push(`Typography direction: ${client.brandTypography.join(" | ")}`);
+  }
+
+  if (client?.notes) {
+    sections.push(`Client notes: ${truncateText(client.notes, 260)}`);
+  }
+
+  const relevantEntries = kbEntries
+    .filter((entry) => ["brand", "audience", "offers", "notes", "past_results"].includes(entry.category))
+    .slice(0, 6)
+    .map((entry) => `${entry.category.toUpperCase()} — ${entry.title}: ${truncateText(entry.content, 260)}`);
+
+  if (relevantEntries.length) {
+    sections.push(`Knowledge base:\n${relevantEntries.join("\n")}`);
+  }
+
+  if (!sections.length) {
+    return "";
+  }
+
+  return sections.join("\n\n");
+}
+
+function summarizeAnalytics(analytics: any[]) {
+  return {
+    totalFollowers: analytics.reduce((sum, row) => sum + (row.followers ?? 0), 0),
+    totalImpressions: analytics.reduce((sum, row) => sum + (row.impressions ?? 0), 0),
+    totalReach: analytics.reduce((sum, row) => sum + (row.reach ?? 0), 0),
+    avgEngagement:
+      analytics.length > 0
+        ? analytics.reduce((sum, row) => sum + (row.engagementRate ?? 0), 0) / analytics.length
+        : 0,
+  };
+}
+
+function normalizeInvoiceLineItems(value: unknown) {
+  const source = Array.isArray(value) ? value : [];
+  return source
+    .map((item) => {
+      const line = item as Record<string, unknown>;
+      const description = typeof line.description === "string" ? line.description.trim() : "";
+      const quantity = Number(line.quantity ?? 1);
+      const unitAmount = Number(line.unitAmount ?? 0);
+      return {
+        description,
+        quantity: Number.isFinite(quantity) && quantity > 0 ? quantity : 1,
+        unitAmount: Number.isFinite(unitAmount) && unitAmount >= 0 ? unitAmount : 0,
+      };
+    })
+    .filter((item) => item.description && item.unitAmount > 0);
 }
 
 export async function registerRoutes(
@@ -442,6 +509,182 @@ Return only valid JSON with this exact shape:
   });
 
   // ══════════════════════════════════════════════════
+  // INVOICE DRAFTS
+  // ══════════════════════════════════════════════════
+  app.get("/api/invoice-drafts", async (req, res) => {
+    const clientId = req.query.clientId as string | undefined;
+    const drafts = await storage.listInvoiceDrafts(clientId);
+    res.json(drafts);
+  });
+
+  app.get("/api/invoice-drafts/:id", async (req, res) => {
+    const draft = await storage.getInvoiceDraft(req.params.id);
+    if (!draft) return res.status(404).json({ message: "Invoice draft not found" });
+    res.json(draft);
+  });
+
+  app.post("/api/invoice-drafts", async (req, res) => {
+    const parsed = insertInvoiceDraftSchema.safeParse({
+      ...req.body,
+      lineItems: normalizeInvoiceLineItems(req.body?.lineItems),
+    });
+    if (!parsed.success) return res.status(400).json({ message: parsed.error.message });
+    const draft = await storage.createInvoiceDraft(parsed.data);
+    res.status(201).json(draft);
+  });
+
+  app.patch("/api/invoice-drafts/:id", async (req, res) => {
+    const nextData = {
+      ...req.body,
+      ...(req.body?.lineItems ? { lineItems: normalizeInvoiceLineItems(req.body.lineItems) } : {}),
+    };
+    const draft = await storage.updateInvoiceDraft(req.params.id, nextData);
+    if (!draft) return res.status(404).json({ message: "Invoice draft not found" });
+    res.json(draft);
+  });
+
+  app.delete("/api/invoice-drafts/:id", async (req, res) => {
+    const deleted = await storage.deleteInvoiceDraft(req.params.id);
+    if (!deleted) return res.status(404).json({ message: "Invoice draft not found" });
+    res.json({ success: true });
+  });
+
+  app.post("/api/invoice-drafts/:id/create-stripe-invoice", async (req, res) => {
+    try {
+      const draft = await storage.getInvoiceDraft(req.params.id);
+      if (!draft) return res.status(404).json({ message: "Invoice draft not found" });
+
+      if (!STRIPE_SECRET_KEY) {
+        return res.status(503).json({ message: "Stripe not configured" });
+      }
+
+      const client = await storage.getClient(draft.clientId);
+      const lineItems = normalizeInvoiceLineItems(draft.lineItems);
+      if (!lineItems.length) {
+        return res.status(400).json({ message: "At least one invoice line item is required" });
+      }
+
+      const Stripe = (await import("stripe")).default;
+      const stripe = new Stripe(STRIPE_SECRET_KEY);
+
+      let customer = null;
+      if (draft.recipientEmail) {
+        const existingCustomers = await stripe.customers.list({
+          email: draft.recipientEmail,
+          limit: 1,
+        });
+        if (existingCustomers.data.length > 0) {
+          customer = existingCustomers.data[0];
+        }
+      }
+
+      if (!customer) {
+        customer = await stripe.customers.create({
+          email: draft.recipientEmail || undefined,
+          name: draft.recipientName,
+          metadata: {
+            tlm_client_id: draft.clientId,
+            tlm_contract_id: draft.contractId ?? "",
+            tlm_invoice_draft_id: draft.id,
+            billing_company: draft.billingCompany ?? "",
+            billing_abn: draft.billingAbn ?? "",
+          },
+        });
+      }
+
+      const invoice = await stripe.invoices.create({
+        customer: customer.id,
+        currency: draft.currency || "aud",
+        collection_method: "send_invoice",
+        days_until_due: draft.dueInDays ?? 14,
+        description: draft.title,
+        custom_fields: [
+          draft.billingCompany ? { name: "Billing Entity", value: draft.billingCompany } : null,
+          draft.billingAbn ? { name: "ABN", value: draft.billingAbn } : null,
+        ].filter(Boolean) as Array<{ name: string; value: string }>,
+        footer: draft.notes || undefined,
+        metadata: {
+          tlm_client_id: draft.clientId,
+          tlm_contract_id: draft.contractId ?? "",
+          tlm_invoice_draft_id: draft.id,
+        },
+      });
+
+      for (const lineItem of lineItems) {
+        await stripe.invoiceItems.create({
+          customer: customer.id,
+          invoice: invoice.id,
+          amount: Math.round(lineItem.unitAmount * lineItem.quantity * 100),
+          currency: draft.currency || "aud",
+          description:
+            lineItem.quantity > 1
+              ? `${lineItem.description} x${lineItem.quantity}`
+              : lineItem.description,
+        });
+      }
+
+      const finalized = await stripe.invoices.finalizeInvoice(invoice.id);
+
+      const updated = await storage.updateInvoiceDraft(draft.id, {
+        status: "synced",
+        stripeInvoiceId: finalized.id,
+        stripeInvoiceUrl: finalized.hosted_invoice_url,
+        stripeInvoicePdf: finalized.invoice_pdf,
+      });
+
+      await storage.createActivityLog({
+        action: "invoice_draft_synced",
+        description: `Invoice draft synced to Stripe for ${client?.businessName ?? draft.recipientName}`,
+        resourceType: "invoice_draft",
+        resourceId: draft.id,
+      });
+
+      res.json({
+        success: true,
+        draft: updated,
+        stripeInvoiceId: finalized.id,
+        invoiceUrl: finalized.hosted_invoice_url,
+        invoicePdf: finalized.invoice_pdf,
+        status: finalized.status,
+      });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  app.post("/api/invoice-drafts/:id/send", async (req, res) => {
+    try {
+      const draft = await storage.getInvoiceDraft(req.params.id);
+      if (!draft?.stripeInvoiceId) {
+        return res.status(400).json({ message: "This draft has not been synced to Stripe yet" });
+      }
+
+      if (!STRIPE_SECRET_KEY) {
+        return res.status(503).json({ message: "Stripe not configured" });
+      }
+
+      const Stripe = (await import("stripe")).default;
+      const stripe = new Stripe(STRIPE_SECRET_KEY);
+      const sent = await stripe.invoices.sendInvoice(draft.stripeInvoiceId);
+
+      const updated = await storage.updateInvoiceDraft(draft.id, {
+        status: "sent",
+        stripeInvoiceUrl: sent.hosted_invoice_url,
+        stripeInvoicePdf: sent.invoice_pdf,
+      });
+
+      res.json({
+        success: true,
+        draft: updated,
+        status: sent.status,
+        invoiceUrl: sent.hosted_invoice_url,
+      });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  // ══════════════════════════════════════════════════
   // KNOWLEDGE BASE
   // ══════════════════════════════════════════════════
   app.get("/api/knowledge-base", async (req, res) => {
@@ -678,15 +921,19 @@ Return only valid JSON with this exact shape:
         return res.status(410).json({ message: "Share link has expired" });
       }
 
-      let data: any = { type: link.type };
+      let payload: any = null;
+      let clientName: string | undefined;
 
       switch (link.type) {
         case "analytics": {
           if (link.clientId) {
             const analytics = await storage.listSocialAnalytics(link.clientId);
             const client = await storage.getClient(link.clientId);
-            data.client = client ? { id: client.id, businessName: client.businessName } : null;
-            data.analytics = analytics;
+            clientName = client?.businessName;
+            payload = {
+              analytics,
+              summary: summarizeAnalytics(analytics),
+            };
           }
           break;
         }
@@ -694,8 +941,10 @@ Return only valid JSON with this exact shape:
           if (link.clientId) {
             const pieces = await storage.listContentPieces(link.clientId);
             const client = await storage.getClient(link.clientId);
-            data.client = client ? { id: client.id, businessName: client.businessName } : null;
-            data.contentPieces = pieces.filter(p => p.scheduledDate);
+            clientName = client?.businessName;
+            payload = {
+              contentPieces: pieces.filter(p => p.scheduledDate),
+            };
           }
           break;
         }
@@ -703,8 +952,8 @@ Return only valid JSON with this exact shape:
           const contract = await storage.getContract(link.resourceId);
           if (contract) {
             const client = await storage.getClient(contract.clientId);
-            data.contract = contract;
-            data.client = client ? { id: client.id, businessName: client.businessName } : null;
+            clientName = client?.businessName;
+            payload = contract;
           }
           break;
         }
@@ -712,14 +961,19 @@ Return only valid JSON with this exact shape:
           const plan = await storage.getContentPlan(link.resourceId);
           if (plan) {
             const client = await storage.getClient(plan.clientId);
-            data.plan = plan;
-            data.client = client ? { id: client.id, businessName: client.businessName } : null;
+            clientName = client?.businessName;
+            payload = plan;
           }
           break;
         }
       }
 
-      res.json(data);
+      res.json({
+        type: link.type,
+        data: payload,
+        clientName,
+        shareLinkId: link.id,
+      });
     } catch (err: any) {
       res.status(500).json({ message: err.message });
     }
@@ -747,6 +1001,106 @@ Return only valid JSON with this exact shape:
       });
 
       res.status(201).json(link);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  app.get("/api/share/:token/feedback", async (req, res) => {
+    try {
+      const link = await storage.getShareLinkByToken(req.params.token);
+      if (!link) return res.status(404).json({ message: "Share link not found" });
+      const feedback = await storage.listShareFeedback(link.id);
+      res.json(feedback);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  app.post("/api/share/:token/feedback", async (req, res) => {
+    try {
+      const link = await storage.getShareLinkByToken(req.params.token);
+      if (!link) return res.status(404).json({ message: "Share link not found" });
+
+      const parsed = insertShareFeedbackSchema.safeParse({
+        shareLinkId: link.id,
+        resourceType: link.type,
+        resourceId: link.resourceId,
+        kind: req.body.kind ?? "comment",
+        authorName: req.body.authorName,
+        authorEmail: req.body.authorEmail,
+        message: req.body.message,
+      });
+      if (!parsed.success) return res.status(400).json({ message: parsed.error.message });
+
+      const feedback = await storage.createShareFeedback(parsed.data);
+      res.status(201).json(feedback);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  app.patch("/api/share/:token/approve", async (req, res) => {
+    try {
+      const link = await storage.getShareLinkByToken(req.params.token);
+      if (!link) return res.status(404).json({ message: "Share link not found" });
+      if (link.type !== "plan") return res.status(400).json({ message: "This link is not a plan review link" });
+
+      const plan = await storage.getContentPlan(link.resourceId);
+      if (!plan) return res.status(404).json({ message: "Content plan not found" });
+
+      const updatedPlan = await storage.updateContentPlan(plan.id, { status: "approved" });
+      const feedback = await storage.createShareFeedback({
+        shareLinkId: link.id,
+        resourceType: "plan",
+        resourceId: plan.id,
+        kind: "approval",
+        authorName: req.body.authorName ?? null,
+        authorEmail: req.body.authorEmail ?? null,
+        message: req.body.message ?? "Plan approved.",
+      });
+
+      await storage.createActivityLog({
+        action: "plan_approved",
+        description: `${updatedPlan?.title ?? "Content plan"} approved via public review link`,
+        resourceType: "plan",
+        resourceId: plan.id,
+      });
+
+      res.json({ success: true, plan: updatedPlan, feedback });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
+  app.patch("/api/share/:token/request-changes", async (req, res) => {
+    try {
+      const link = await storage.getShareLinkByToken(req.params.token);
+      if (!link) return res.status(404).json({ message: "Share link not found" });
+      if (link.type !== "plan") return res.status(400).json({ message: "This link is not a plan review link" });
+
+      const plan = await storage.getContentPlan(link.resourceId);
+      if (!plan) return res.status(404).json({ message: "Content plan not found" });
+
+      const updatedPlan = await storage.updateContentPlan(plan.id, { status: "draft" });
+      const feedback = await storage.createShareFeedback({
+        shareLinkId: link.id,
+        resourceType: "plan",
+        resourceId: plan.id,
+        kind: "revision_request",
+        authorName: req.body.authorName ?? null,
+        authorEmail: req.body.authorEmail ?? null,
+        message: req.body.message ?? "Please revise this plan.",
+      });
+
+      await storage.createActivityLog({
+        action: "plan_revision_requested",
+        description: `${updatedPlan?.title ?? "Content plan"} had revisions requested via public review link`,
+        resourceType: "plan",
+        resourceId: plan.id,
+      });
+
+      res.json({ success: true, plan: updatedPlan, feedback });
     } catch (err: any) {
       res.status(500).json({ message: err.message });
     }
@@ -909,7 +1263,28 @@ Help the agency team with content strategy, copywriting, campaign ideas, audienc
       }
 
       const usedModel = model || "dall-e-3";
-      const fullPrompt = styleNotes ? `${prompt}. Style notes: ${styleNotes}` : prompt;
+      let fullPrompt = styleNotes ? `${prompt}. Style notes: ${styleNotes}` : prompt;
+
+      if (clientId) {
+        const client = await storage.getClient(clientId);
+        if (client) {
+          const kbEntries = await storage.listKnowledgeBase(clientId);
+          const brandContext = buildClientBrandContext(client, kbEntries);
+          if (brandContext) {
+            fullPrompt = `${prompt}
+
+Client brand guidance:
+${brandContext}
+
+Execution rules:
+- Stay visually aligned with the client's brand identity.
+- Prefer the client's brand palette and typography direction when composing the creative.
+- Avoid introducing random colors, unrelated styles, or off-brand aesthetics.
+
+Additional style notes: ${styleNotes || "None provided."}`;
+          }
+        }
+      }
       let imageUrl = "";
 
       const isNanoBanana = ["nano_banana_2", "nano_banana_pro"].includes(usedModel);
@@ -1493,8 +1868,8 @@ Respond as JSON with keys: brand, audience, competitors, offers, notes — each 
               tlm_contract_id: contract.id,
               tlm_client_id: contract.clientId,
             },
-            success_url: `${req.headers.origin || req.protocol + "://" + req.get("host")}/#/share/${req.params.token}?payment=success`,
-            cancel_url: `${req.headers.origin || req.protocol + "://" + req.get("host")}/#/share/${req.params.token}?payment=cancelled`,
+            success_url: `${req.headers.origin || req.protocol + "://" + req.get("host")}/public/${req.params.token}?payment=success`,
+            cancel_url: `${req.headers.origin || req.protocol + "://" + req.get("host")}/public/${req.params.token}?payment=cancelled`,
           });
 
           stripeCheckoutUrl = session.url;

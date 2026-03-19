@@ -2,8 +2,8 @@ import { eq, desc, and, sql as drizzleSql } from "drizzle-orm";
 import { db } from "./db";
 import {
   users, clients, agencySettings, knowledgeBase, leads, contentPieces,
-  contentPlans, aiSessions, tasks, contracts, shareLinks, generatedImages,
-  socialAnalytics, activityLog, teamInvites, revenueGoals,
+  contentPlans, aiSessions, tasks, contracts, shareLinks, shareFeedback, invoiceDrafts,
+  generatedImages, socialAnalytics, activityLog, teamInvites, revenueGoals,
 } from "@shared/schema";
 import type {
   User, InsertUser, AgencySettings, InsertAgencySettings,
@@ -11,7 +11,8 @@ import type {
   Lead, InsertLead, ContentPiece, InsertContentPiece,
   ContentPlan, InsertContentPlan, AiSession, InsertAiSession,
   Task, InsertTask, Contract, InsertContract,
-  ShareLink, InsertShareLink, GeneratedImage, InsertGeneratedImage,
+  ShareLink, InsertShareLink, ShareFeedback, InsertShareFeedback,
+  InvoiceDraft, InsertInvoiceDraft, GeneratedImage, InsertGeneratedImage,
   SocialAnalytics, InsertSocialAnalytics, ActivityLog, InsertActivityLog,
   TeamInvite, InsertTeamInvite, RevenueGoal, InsertRevenueGoal,
 } from "@shared/schema";
@@ -257,6 +258,17 @@ export class DatabaseStorage implements IStorage {
     const result = await db.delete(shareLinks).where(eq(shareLinks.id, id)).returning();
     return result.length > 0;
   }
+  async listShareFeedback(shareLinkId: string): Promise<ShareFeedback[]> {
+    return db
+      .select()
+      .from(shareFeedback)
+      .where(eq(shareFeedback.shareLinkId, shareLinkId))
+      .orderBy(shareFeedback.createdAt);
+  }
+  async createShareFeedback(data: InsertShareFeedback): Promise<ShareFeedback> {
+    const [row] = await db.insert(shareFeedback).values(data).returning();
+    return row;
+  }
 
   // ── Generated Images ──────────────────────────────
   async listGeneratedImages(clientId?: string): Promise<GeneratedImage[]> {
@@ -348,6 +360,38 @@ export class DatabaseStorage implements IStorage {
   }
   async deleteRevenueGoal(id: string): Promise<boolean> {
     const result = await db.delete(revenueGoals).where(eq(revenueGoals.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // ── Invoice Drafts ───────────────────────────────
+  async listInvoiceDrafts(clientId?: string): Promise<InvoiceDraft[]> {
+    if (clientId) {
+      return db
+        .select()
+        .from(invoiceDrafts)
+        .where(eq(invoiceDrafts.clientId, clientId))
+        .orderBy(desc(invoiceDrafts.updatedAt));
+    }
+    return db.select().from(invoiceDrafts).orderBy(desc(invoiceDrafts.updatedAt));
+  }
+  async getInvoiceDraft(id: string): Promise<InvoiceDraft | undefined> {
+    const [row] = await db.select().from(invoiceDrafts).where(eq(invoiceDrafts.id, id));
+    return row;
+  }
+  async createInvoiceDraft(data: InsertInvoiceDraft): Promise<InvoiceDraft> {
+    const [row] = await db.insert(invoiceDrafts).values(data).returning();
+    return row;
+  }
+  async updateInvoiceDraft(id: string, data: Partial<InsertInvoiceDraft>): Promise<InvoiceDraft | undefined> {
+    const [row] = await db
+      .update(invoiceDrafts)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(invoiceDrafts.id, id))
+      .returning();
+    return row;
+  }
+  async deleteInvoiceDraft(id: string): Promise<boolean> {
+    const result = await db.delete(invoiceDrafts).where(eq(invoiceDrafts.id, id)).returning();
     return result.length > 0;
   }
 }

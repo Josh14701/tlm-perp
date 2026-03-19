@@ -8,6 +8,20 @@
       "when": 1773895079648,
       "tag": "0000_wet_praxagora",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1777000000000,
+      "tag": "0001_add_brand_guidelines",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1777000001000,
+      "tag": "0002_share_feedback_and_invoice_drafts",
+      "breakpoints": true
     }
   ]
 }

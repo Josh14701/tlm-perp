@@ -36,8 +36,11 @@ import {
   ChevronLeft,
   ChevronRight,
   ImageIcon,
+  Palette,
+  Type,
+  BookOpen,
 } from "lucide-react";
-import type { GeneratedImage, Client } from "@shared/schema";
+import type { GeneratedImage, Client, KnowledgeBase } from "@shared/schema";
 
 // ── Status Styles ──────────────────────────────────
 
@@ -87,8 +90,44 @@ function GenerationControls({
   setClientId: (v: string) => void;
   clients: Client[];
 }) {
+  const selectedClient = clients.find((client) => client.id === clientId);
+  const { data: knowledgeBaseEntries } = useQuery<KnowledgeBase[]>({
+    queryKey: ["/api/knowledge-base", { clientId }],
+    queryFn: async () => {
+      const res = await apiRequest("GET", `/api/knowledge-base?clientId=${clientId}`);
+      return res.json();
+    },
+    enabled: !!selectedClient,
+  });
+
+  const brandEntries = useMemo(
+    () =>
+      (knowledgeBaseEntries ?? [])
+        .filter((entry) => ["brand", "audience", "offers"].includes(entry.category))
+        .slice(0, 3),
+    [knowledgeBaseEntries],
+  );
+
+  function applyBrandGuidance() {
+    if (!selectedClient) return;
+    const nextNotes = [
+      selectedClient.brandColors?.length
+        ? `Use brand colors ${selectedClient.brandColors.join(", ")}.`
+        : null,
+      selectedClient.brandTypography?.length
+        ? `Typography direction: ${selectedClient.brandTypography.join(" | ")}.`
+        : null,
+      brandEntries[0]?.content ? `Brand note: ${brandEntries[0].content}` : null,
+    ]
+      .filter(Boolean)
+      .join(" ");
+
+    if (!nextNotes) return;
+    setStyleNotes(styleNotes ? `${styleNotes}\n${nextNotes}` : nextNotes);
+  }
+
   return (
-    <div className="space-y-3" data-testid="generation-controls">
+    <div className="space-y-4" data-testid="generation-controls">
       <div>
         <label className="text-xs font-medium text-muted-foreground mb-1 block">
           Model
@@ -136,6 +175,97 @@ function GenerationControls({
           </SelectContent>
         </Select>
       </div>
+      {selectedClient && (
+        <Card className="glass-card overflow-hidden">
+          <CardContent className="space-y-4 p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-slate-900 dark:text-white">
+                  Brand Reference
+                </p>
+                <p className="text-xs leading-5 text-muted-foreground">
+                  This client&apos;s brand guidance is automatically injected into image generation.
+                </p>
+              </div>
+              <Button variant="outline" size="sm" onClick={applyBrandGuidance}>
+                Use Brand Guidance
+              </Button>
+            </div>
+
+            {selectedClient.brandLogo && (
+              <div className="flex items-center gap-3 rounded-[22px] border border-white/25 bg-white/20 p-3 backdrop-blur-xl">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-white/35 bg-white/85 p-2 dark:border-white/10 dark:bg-white/5">
+                  <img
+                    src={selectedClient.brandLogo}
+                    alt={`${selectedClient.businessName} logo`}
+                    className="max-h-full max-w-full object-contain"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">{selectedClient.businessName}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {selectedClient.industry || "Client brand profile"}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {selectedClient.brandColors?.length ? (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                  <Palette className="h-3.5 w-3.5" />
+                  Color palette
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {selectedClient.brandColors.map((color) => (
+                    <div key={color} className="flex items-center gap-2 rounded-full border border-white/25 bg-white/20 px-2.5 py-1.5 backdrop-blur-xl">
+                      <span className="h-4 w-4 rounded-full border border-white/60" style={{ backgroundColor: color }} />
+                      <span className="text-xs font-medium">{color}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {selectedClient.brandTypography?.length ? (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                  <Type className="h-3.5 w-3.5" />
+                  Type direction
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {selectedClient.brandTypography.map((font) => (
+                    <Badge key={font} variant="outline" className="rounded-full bg-white/20">
+                      {font}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {brandEntries.length ? (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                  <BookOpen className="h-3.5 w-3.5" />
+                  Strategy notes
+                </div>
+                <div className="space-y-2">
+                  {brandEntries.map((entry) => (
+                    <div key={entry.id} className="rounded-[20px] border border-white/20 bg-white/14 p-3 backdrop-blur-xl">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                        {entry.title}
+                      </p>
+                      <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                        {entry.content}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

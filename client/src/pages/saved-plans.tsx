@@ -280,7 +280,7 @@ function PlanDetailDialog({
     },
     onSuccess: (data) => {
       if (data) {
-        const link = `${window.location.origin}/#/public/${data.token}`;
+        const link = `${window.location.origin}/public/${data.token}`;
         setShareLink(link);
         navigator.clipboard.writeText(link);
         toast({ title: "Share link copied!", description: "Link copied to clipboard." });

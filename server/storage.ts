@@ -10,6 +10,8 @@ import {
   type Task, type InsertTask,
   type Contract, type InsertContract,
   type ShareLink, type InsertShareLink,
+  type ShareFeedback, type InsertShareFeedback,
+  type InvoiceDraft, type InsertInvoiceDraft,
   type GeneratedImage, type InsertGeneratedImage,
   type SocialAnalytics, type InsertSocialAnalytics,
   type ActivityLog, type InsertActivityLog,
@@ -91,6 +93,8 @@ export interface IStorage {
   getShareLinkByToken(token: string): Promise<ShareLink | undefined>;
   createShareLink(data: InsertShareLink): Promise<ShareLink>;
   deleteShareLink(id: string): Promise<boolean>;
+  listShareFeedback(shareLinkId: string): Promise<ShareFeedback[]>;
+  createShareFeedback(data: InsertShareFeedback): Promise<ShareFeedback>;
 
   // Generated Images
   listGeneratedImages(clientId?: string): Promise<GeneratedImage[]>;
@@ -120,6 +124,13 @@ export interface IStorage {
   createRevenueGoal(data: InsertRevenueGoal): Promise<RevenueGoal>;
   updateRevenueGoal(id: string, data: Partial<InsertRevenueGoal>): Promise<RevenueGoal | undefined>;
   deleteRevenueGoal(id: string): Promise<boolean>;
+
+  // Invoice Drafts
+  listInvoiceDrafts(clientId?: string): Promise<InvoiceDraft[]>;
+  getInvoiceDraft(id: string): Promise<InvoiceDraft | undefined>;
+  createInvoiceDraft(data: InsertInvoiceDraft): Promise<InvoiceDraft>;
+  updateInvoiceDraft(id: string, data: Partial<InsertInvoiceDraft>): Promise<InvoiceDraft | undefined>;
+  deleteInvoiceDraft(id: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -134,6 +145,8 @@ export class MemStorage implements IStorage {
   private tasks: Map<string, Task> = new Map();
   private contracts: Map<string, Contract> = new Map();
   private shareLinks: Map<string, ShareLink> = new Map();
+  private shareFeedbackEntries: Map<string, ShareFeedback> = new Map();
+  private invoiceDrafts: Map<string, InvoiceDraft> = new Map();
   private generatedImages: Map<string, GeneratedImage> = new Map();
   private socialAnalyticsEntries: Map<string, SocialAnalytics> = new Map();
   private activityLogEntries: Map<string, ActivityLog> = new Map();
@@ -406,6 +419,25 @@ export class MemStorage implements IStorage {
     return link;
   }
   async deleteShareLink(id: string) { return this.shareLinks.delete(id); }
+  async listShareFeedback(shareLinkId: string) {
+    return Array.from(this.shareFeedbackEntries.values())
+      .filter((entry) => entry.shareLinkId === shareLinkId)
+      .sort((a, b) => (a.createdAt?.getTime() ?? 0) - (b.createdAt?.getTime() ?? 0));
+  }
+  async createShareFeedback(data: InsertShareFeedback): Promise<ShareFeedback> {
+    const id = randomUUID();
+    const entry: ShareFeedback = {
+      ...data,
+      id,
+      kind: data.kind ?? "comment",
+      authorName: data.authorName ?? null,
+      authorEmail: data.authorEmail ?? null,
+      message: data.message ?? null,
+      createdAt: new Date(),
+    };
+    this.shareFeedbackEntries.set(id, entry);
+    return entry;
+  }
 
   // ── Generated Images ──────────────────────────────
   async listGeneratedImages(clientId?: string) {
@@ -512,6 +544,53 @@ export class MemStorage implements IStorage {
     return updated;
   }
   async deleteRevenueGoal(id: string) { return this.revenueGoals.delete(id); }
+
+  // ── Invoice Drafts ───────────────────────────────
+  async listInvoiceDrafts(clientId?: string) {
+    const all = Array.from(this.invoiceDrafts.values()).sort(
+      (a, b) => (b.updatedAt?.getTime() ?? 0) - (a.updatedAt?.getTime() ?? 0),
+    );
+    return clientId ? all.filter((draft) => draft.clientId === clientId) : all;
+  }
+  async getInvoiceDraft(id: string) { return this.invoiceDrafts.get(id); }
+  async createInvoiceDraft(data: InsertInvoiceDraft): Promise<InvoiceDraft> {
+    const id = randomUUID();
+    const now = new Date();
+    const draft: InvoiceDraft = {
+      ...data,
+      id,
+      contractId: data.contractId ?? null,
+      recipientEmail: data.recipientEmail ?? null,
+      billingCompany: data.billingCompany ?? null,
+      billingAbn: data.billingAbn ?? null,
+      currency: data.currency ?? "aud",
+      lineItems: data.lineItems ?? [],
+      notes: data.notes ?? null,
+      paymentTerms: data.paymentTerms ?? null,
+      dueInDays: data.dueInDays ?? 14,
+      status: data.status ?? "draft",
+      stripeInvoiceId: data.stripeInvoiceId ?? null,
+      stripeInvoiceUrl: data.stripeInvoiceUrl ?? null,
+      stripeInvoicePdf: data.stripeInvoicePdf ?? null,
+      lastSyncedAt: data.lastSyncedAt ?? null,
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.invoiceDrafts.set(id, draft);
+    return draft;
+  }
+  async updateInvoiceDraft(id: string, data: Partial<InsertInvoiceDraft>) {
+    const existing = this.invoiceDrafts.get(id);
+    if (!existing) return undefined;
+    const updated: InvoiceDraft = {
+      ...existing,
+      ...data,
+      updatedAt: new Date(),
+    };
+    this.invoiceDrafts.set(id, updated);
+    return updated;
+  }
+  async deleteInvoiceDraft(id: string) { return this.invoiceDrafts.delete(id); }
 
   // ═══════════════════════════════════════════════════
   // SEED DATA
