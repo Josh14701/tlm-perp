@@ -1077,73 +1077,85 @@ export default function ContentCalendar() {
         </div>
       </header>
 
-      <div className="p-6 space-y-4 max-w-[1400px]">
-        {/* Navigation Bar */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3" data-testid="calendar-nav">
-          <div className="flex items-center gap-2">
-            <Tabs value={view} onValueChange={(v) => setView(v as "month" | "week")}>
-              <TabsList data-testid="view-toggle">
-                <TabsTrigger value="month" data-testid="tab-month">
-                  Month
-                </TabsTrigger>
-                <TabsTrigger value="week" data-testid="tab-week">
-                  Week
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
+      <div className="mx-auto max-w-[1380px] space-y-8 px-4 py-5 md:px-6 md:py-8">
+        <section className="space-y-4">
+          <div className="space-y-1">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground/70">
+              Planner
+            </p>
+            <h2 className="text-lg font-semibold tracking-[-0.03em] text-slate-900 dark:text-white">
+              Navigate, filter, and schedule with more breathing room
+            </h2>
+          </div>
+          <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center" data-testid="calendar-nav">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+              <div className="flex items-center gap-2">
+                <Tabs value={view} onValueChange={(v) => setView(v as "month" | "week")}>
+                  <TabsList data-testid="view-toggle">
+                    <TabsTrigger value="month" data-testid="tab-month">
+                      Month
+                    </TabsTrigger>
+                    <TabsTrigger value="week" data-testid="tab-week">
+                      Week
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
 
-            <div className="flex items-center gap-1">
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8"
-                onClick={navigateBack}
-                data-testid="button-prev"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 px-3 text-xs"
-                onClick={goToToday}
-                data-testid="button-today"
-              >
-                Today
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8"
-                onClick={navigateForward}
-                data-testid="button-next"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={navigateBack}
+                    data-testid="button-prev"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 px-3 text-xs"
+                    onClick={goToToday}
+                    data-testid="button-today"
+                  >
+                    Today
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={navigateForward}
+                    data-testid="button-next"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              <span className="text-sm font-semibold lg:ml-1" data-testid="current-date-label">
+                {headerLabel}
+              </span>
             </div>
 
-            <span className="text-sm font-semibold ml-1" data-testid="current-date-label">
-              {headerLabel}
-            </span>
+            <div className="sm:ml-auto">
+              <Select value={clientFilter} onValueChange={setClientFilter}>
+                <SelectTrigger className="w-[180px] h-8 text-xs" data-testid="select-client-filter">
+                  <SelectValue placeholder="All Clients" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Clients</SelectItem>
+                  {(clients ?? []).map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.businessName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
+        </section>
 
-          <div className="sm:ml-auto">
-            <Select value={clientFilter} onValueChange={setClientFilter}>
-              <SelectTrigger className="w-[180px] h-8 text-xs" data-testid="select-client-filter">
-                <SelectValue placeholder="All Clients" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Clients</SelectItem>
-                {(clients ?? []).map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.businessName}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
+        <section className="space-y-4">
         {/* Status Pipeline */}
         {isLoading ? (
           <div className="flex items-center gap-2">
@@ -1174,6 +1186,7 @@ export default function ContentCalendar() {
             onChipClick={handleChipClick}
           />
         )}
+        </section>
       </div>
 
       {/* Content Dialog */}

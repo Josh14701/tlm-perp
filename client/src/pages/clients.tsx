@@ -410,36 +410,53 @@ export default function Clients() {
         </div>
       </header>
 
-      {/* Filter Row */}
-      <div className="px-6 py-4 flex flex-col sm:flex-row gap-3" data-testid="filter-row">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search clients..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
-            data-testid="input-search-clients"
-          />
-        </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[160px]" data-testid="select-filter-status">
-            <SelectValue placeholder="All statuses" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="onboarding">Onboarding</SelectItem>
-            <SelectItem value="paused">Paused</SelectItem>
-            <SelectItem value="churned">Churned</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      <div className="mx-auto max-w-[1380px] space-y-8 px-4 py-5 md:px-6 md:py-8">
+        <section className="space-y-4">
+          <div className="space-y-1">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground/70">
+              Directory
+            </p>
+            <h2 className="text-lg font-semibold tracking-[-0.03em] text-slate-900 dark:text-white">
+              Search and manage your client roster
+            </h2>
+          </div>
+          <div className="flex flex-col gap-3 sm:flex-row" data-testid="filter-row">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search clients..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9"
+                data-testid="input-search-clients"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[160px]" data-testid="select-filter-status">
+                <SelectValue placeholder="All statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="onboarding">Onboarding</SelectItem>
+                <SelectItem value="paused">Paused</SelectItem>
+                <SelectItem value="churned">Churned</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </section>
 
-      {/* Client Grid */}
-      <div className="px-6 pb-6">
-        {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" data-testid="grid-clients-loading">
+        <section className="space-y-4">
+          <div className="space-y-1">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground/70">
+              Portfolio
+            </p>
+            <h2 className="text-lg font-semibold tracking-[-0.03em] text-slate-900 dark:text-white">
+              Client cards with room to scan quickly
+            </h2>
+          </div>
+          {isLoading ? (
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3" data-testid="grid-clients-loading">
             {Array.from({ length: 6 }).map((_, i) => (
               <ClientCardSkeleton key={i} />
             ))}
@@ -471,12 +488,13 @@ export default function Clients() {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" data-testid="grid-clients">
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3" data-testid="grid-clients">
             {filtered.map((client) => (
               <ClientCard key={client.id} client={client} />
             ))}
           </div>
         )}
+        </section>
       </div>
 
       <AddClientDialog open={dialogOpen} onOpenChange={setDialogOpen} />

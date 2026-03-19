@@ -1033,52 +1033,69 @@ export default function Contracts() {
         </div>
       </header>
 
-      <div className="p-6 space-y-6">
-        {/* Summary Cards */}
-        {!isLoading && (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4" data-testid="section-summary">
-            <Card className="p-4 glass-card" data-testid="card-active-contracts">
-              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Active Contracts</div>
-              <div className="text-2xl font-semibold mt-1" data-testid="text-active-count">{activeCount}</div>
-            </Card>
-            <Card className="p-4 glass-card" data-testid="card-monthly-revenue">
-              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Monthly Revenue</div>
-              <div className="text-2xl font-semibold mt-1" data-testid="text-monthly-revenue">{formatAUD(totalMonthly)}</div>
-            </Card>
-            <Card className="p-4 glass-card" data-testid="card-draft-contracts">
-              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Drafts</div>
-              <div className="text-2xl font-semibold mt-1" data-testid="text-draft-count">{draftCount}</div>
-            </Card>
+      <div className="mx-auto max-w-[1380px] space-y-8 px-4 py-5 md:px-6 md:py-8">
+        <section className="space-y-4">
+          <div className="space-y-1">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground/70">
+              Snapshot
+            </p>
+            <h2 className="text-lg font-semibold tracking-[-0.03em] text-slate-900 dark:text-white">
+              Agreement status and contracted revenue
+            </h2>
           </div>
-        )}
+          {!isLoading && (
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-3" data-testid="section-summary">
+              <Card className="p-5 glass-card" data-testid="card-active-contracts">
+                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Active Contracts</div>
+                <div className="text-2xl font-semibold mt-1" data-testid="text-active-count">{activeCount}</div>
+              </Card>
+              <Card className="p-5 glass-card" data-testid="card-monthly-revenue">
+                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Monthly Revenue</div>
+                <div className="text-2xl font-semibold mt-1" data-testid="text-monthly-revenue">{formatAUD(totalMonthly)}</div>
+              </Card>
+              <Card className="p-5 glass-card" data-testid="card-draft-contracts">
+                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Drafts</div>
+                <div className="text-2xl font-semibold mt-1" data-testid="text-draft-count">{draftCount}</div>
+              </Card>
+            </div>
+          )}
+        </section>
 
-        {/* Filter Row */}
-        <div className="flex flex-col sm:flex-row gap-3" data-testid="filter-row">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search by client or service..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9"
-              data-testid="input-search-contracts"
-            />
+        <section className="space-y-4">
+          <div className="space-y-1">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground/70">
+              Register
+            </p>
+            <h2 className="text-lg font-semibold tracking-[-0.03em] text-slate-900 dark:text-white">
+              Search and review agreements
+            </h2>
           </div>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[160px]" data-testid="select-filter-status">
-              <SelectValue placeholder="All statuses" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="draft">Draft</SelectItem>
-              <SelectItem value="sent">Sent</SelectItem>
-              <SelectItem value="signed">Signed</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="expired">Expired</SelectItem>
-              <SelectItem value="cancelled">Cancelled</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+          <div className="flex flex-col gap-3 sm:flex-row" data-testid="filter-row">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by client or service..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9"
+                data-testid="input-search-contracts"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[160px]" data-testid="select-filter-status">
+                <SelectValue placeholder="All statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="draft">Draft</SelectItem>
+                <SelectItem value="sent">Sent</SelectItem>
+                <SelectItem value="signed">Signed</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="expired">Expired</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
         {/* Contracts Table */}
         {isLoading ? (
@@ -1205,6 +1222,7 @@ export default function Contracts() {
             </CardContent>
           </Card>
         )}
+        </section>
       </div>
 
       {/* Dialogs */}

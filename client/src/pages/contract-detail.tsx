@@ -344,7 +344,7 @@ export default function ContractDetail({ params }: { params: { id: string } }) {
             <Skeleton className="h-6 w-48" />
           </div>
         </header>
-        <div className="p-6 max-w-4xl mx-auto space-y-6">
+        <div className="mx-auto max-w-[1380px] space-y-6 px-4 py-5 md:px-6 md:py-8">
           <Skeleton className="h-8 w-64" />
           <Skeleton className="h-32 w-full" />
           <div className="grid grid-cols-2 gap-4">
@@ -409,7 +409,7 @@ export default function ContractDetail({ params }: { params: { id: string } }) {
         </div>
       </header>
 
-      <div className="p-6 max-w-4xl mx-auto space-y-8">
+      <div className="mx-auto max-w-[1380px] space-y-8 px-4 py-5 md:px-6 md:py-8">
         {/* ═══ LINKS SECTION ═══ */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Internal Link (Agency) */}

@@ -293,36 +293,45 @@ export default function Invoices() {
         </div>
       </header>
 
-      <div className="p-6 space-y-6">
-        {/* Summary Cards */}
-        {!invoicesLoading && (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4" data-testid="invoice-summary">
-            <Card className="p-4 glass-card">
-              <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-                <span className="text-xs font-medium uppercase tracking-wider">Paid</span>
-              </div>
-              <div className="text-2xl font-semibold">{formatAUD(totalPaid)}</div>
-            </Card>
-            <Card className="p-4 glass-card">
-              <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                <Clock className="h-3.5 w-3.5 text-blue-500" />
-                <span className="text-xs font-medium uppercase tracking-wider">Outstanding</span>
-              </div>
-              <div className="text-2xl font-semibold">{formatAUD(totalOpen)}</div>
-            </Card>
-            <Card className="p-4 glass-card">
-              <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                <DollarSign className="h-3.5 w-3.5" />
-                <span className="text-xs font-medium uppercase tracking-wider">Drafts</span>
-              </div>
-              <div className="text-2xl font-semibold">{totalDraft}</div>
-            </Card>
+      <div className="mx-auto max-w-[1380px] space-y-8 px-4 py-5 md:px-6 md:py-8">
+        <section className="space-y-4">
+          <div className="space-y-1">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground/70">
+              Snapshot
+            </p>
+            <h2 className="text-lg font-semibold tracking-[-0.03em] text-slate-900 dark:text-white">
+              Billing health across paid, open, and draft invoices
+            </h2>
           </div>
-        )}
+          {!invoicesLoading && (
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-3" data-testid="invoice-summary">
+              <Card className="p-5 glass-card">
+                <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                  <span className="text-xs font-medium uppercase tracking-wider">Paid</span>
+                </div>
+                <div className="text-2xl font-semibold">{formatAUD(totalPaid)}</div>
+              </Card>
+              <Card className="p-5 glass-card">
+                <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                  <Clock className="h-3.5 w-3.5 text-blue-500" />
+                  <span className="text-xs font-medium uppercase tracking-wider">Outstanding</span>
+                </div>
+                <div className="text-2xl font-semibold">{formatAUD(totalOpen)}</div>
+              </Card>
+              <Card className="p-5 glass-card">
+                <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                  <DollarSign className="h-3.5 w-3.5" />
+                  <span className="text-xs font-medium uppercase tracking-wider">Drafts</span>
+                </div>
+                <div className="text-2xl font-semibold">{totalDraft}</div>
+              </Card>
+            </div>
+          )}
+        </section>
 
         {!connected && !invoicesLoading && (
-          <Card className="p-6 text-center">
+          <Card className="p-6 text-center glass-card">
             <AlertTriangle className="h-8 w-8 text-amber-500 mx-auto mb-3" />
             <p className="text-sm font-medium">Stripe not configured</p>
             <p className="text-xs text-muted-foreground mt-1">
@@ -331,36 +340,44 @@ export default function Invoices() {
           </Card>
         )}
 
-        {/* Filter Row */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search by name or email..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9"
-              data-testid="input-search-invoices"
-            />
+        <section className="space-y-4">
+          <div className="space-y-1">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground/70">
+              Ledger
+            </p>
+            <h2 className="text-lg font-semibold tracking-[-0.03em] text-slate-900 dark:text-white">
+              Filter and review client invoices
+            </h2>
           </div>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[160px]">
-              <SelectValue placeholder="All statuses" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="draft">Draft</SelectItem>
-              <SelectItem value="open">Open</SelectItem>
-              <SelectItem value="paid">Paid</SelectItem>
-              <SelectItem value="uncollectible">Uncollectible</SelectItem>
-              <SelectItem value="void">Void</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by name or email..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9"
+                data-testid="input-search-invoices"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[160px]">
+                <SelectValue placeholder="All statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="draft">Draft</SelectItem>
+                <SelectItem value="open">Open</SelectItem>
+                <SelectItem value="paid">Paid</SelectItem>
+                <SelectItem value="uncollectible">Uncollectible</SelectItem>
+                <SelectItem value="void">Void</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
         {/* Invoices Table */}
         {invoicesLoading ? (
-          <Card>
+          <Card className="glass-card">
             <CardContent className="p-0">
               {Array.from({ length: 5 }).map((_, i) => (
                 <div key={i} className="flex items-center gap-4 px-4 py-3 border-b last:border-0">
@@ -383,7 +400,7 @@ export default function Invoices() {
             </p>
           </div>
         ) : (
-          <Card>
+          <Card className="glass-card">
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
@@ -471,6 +488,7 @@ export default function Invoices() {
             </CardContent>
           </Card>
         )}
+        </section>
       </div>
 
       <CreateInvoiceDialog

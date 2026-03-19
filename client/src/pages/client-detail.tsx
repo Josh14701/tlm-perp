@@ -1360,9 +1360,9 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
         </div>
       ) : (
         <>
-          <div className="mx-auto max-w-[1360px] p-4 md:p-6">
+          <div className="mx-auto max-w-[1380px] space-y-6 px-4 py-5 md:px-6 md:py-8">
             <Tabs defaultValue="knowledge-base" data-testid="client-tabs">
-              <TabsList className="mb-5 h-auto flex-wrap justify-start gap-2 rounded-[22px] p-1.5" data-testid="client-tabs-list">
+              <TabsList className="mb-6 h-auto flex-wrap justify-start gap-2 rounded-[22px] p-1.5" data-testid="client-tabs-list">
                 <TabsTrigger value="knowledge-base" data-testid="tab-trigger-kb">
                   <Brain className="h-3.5 w-3.5 mr-1.5" />
                   Knowledge Base
@@ -1389,22 +1389,22 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="knowledge-base">
+              <TabsContent value="knowledge-base" className="mt-0">
                 <KnowledgeBaseTab clientId={clientId} client={client} />
               </TabsContent>
-              <TabsContent value="brand-guidelines">
+              <TabsContent value="brand-guidelines" className="mt-0">
                 <BrandGuidelinesTab clientId={clientId} client={client} />
               </TabsContent>
-              <TabsContent value="content">
+              <TabsContent value="content" className="mt-0">
                 <ContentTab clientId={clientId} />
               </TabsContent>
-              <TabsContent value="contracts">
+              <TabsContent value="contracts" className="mt-0">
                 <ContractsTab clientId={clientId} />
               </TabsContent>
-              <TabsContent value="analytics">
+              <TabsContent value="analytics" className="mt-0">
                 <AnalyticsTab clientId={clientId} />
               </TabsContent>
-              <TabsContent value="team">
+              <TabsContent value="team" className="mt-0">
                 <TeamTab client={client} />
               </TabsContent>
             </Tabs>

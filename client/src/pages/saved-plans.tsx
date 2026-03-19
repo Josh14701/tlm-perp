@@ -721,65 +721,81 @@ export default function SavedPlans() {
         </div>
       </header>
 
-      <div className="p-6 space-y-6">
-        {/* Stats */}
-        {plansLoading ? (
-          <StatsRowSkeleton />
-        ) : (
-          <StatsRow plans={plans ?? []} />
-        )}
-
-        {/* Filter Bar */}
-        <div
-          className="flex flex-col sm:flex-row gap-3"
-          data-testid="filter-bar"
-        >
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search plans..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9"
-              data-testid="input-search-plans"
-            />
+      <div className="mx-auto max-w-[1380px] space-y-8 px-4 py-5 md:px-6 md:py-8">
+        <section className="space-y-4">
+          <div className="space-y-1">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground/70">
+              Snapshot
+            </p>
+            <h2 className="text-lg font-semibold tracking-[-0.03em] text-slate-900 dark:text-white">
+              Content plan volume and approval status
+            </h2>
           </div>
-          <Select value={clientFilter} onValueChange={setClientFilter}>
-            <SelectTrigger
-              className="w-[200px]"
-              data-testid="select-filter-client"
-            >
-              <SelectValue placeholder="All clients" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Clients</SelectItem>
-              {(clients ?? []).map((c) => (
-                <SelectItem key={c.id} value={c.id}>
-                  {c.businessName}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger
-              className="w-[160px]"
-              data-testid="select-filter-status"
-            >
-              <SelectValue placeholder="All statuses" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="draft">Draft</SelectItem>
-              <SelectItem value="approved">Approved</SelectItem>
-              <SelectItem value="archived">Archived</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+          {plansLoading ? (
+            <StatsRowSkeleton />
+          ) : (
+            <StatsRow plans={plans ?? []} />
+          )}
+        </section>
 
-        {/* Plans Grid */}
+        <section className="space-y-4">
+          <div className="space-y-1">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground/70">
+              Library
+            </p>
+            <h2 className="text-lg font-semibold tracking-[-0.03em] text-slate-900 dark:text-white">
+              Filter, review, and share saved plans
+            </h2>
+          </div>
+          <div
+            className="flex flex-col gap-3 sm:flex-row"
+            data-testid="filter-bar"
+          >
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search plans..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9"
+                data-testid="input-search-plans"
+              />
+            </div>
+            <Select value={clientFilter} onValueChange={setClientFilter}>
+              <SelectTrigger
+                className="w-[200px]"
+                data-testid="select-filter-client"
+              >
+                <SelectValue placeholder="All clients" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Clients</SelectItem>
+                {(clients ?? []).map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.businessName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger
+                className="w-[160px]"
+                data-testid="select-filter-status"
+              >
+                <SelectValue placeholder="All statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="draft">Draft</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="archived">Archived</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
         {plansLoading ? (
           <div
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+            className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3"
             data-testid="grid-plans-loading"
           >
             {Array.from({ length: 6 }).map((_, i) => (
@@ -805,7 +821,7 @@ export default function SavedPlans() {
           </div>
         ) : (
           <div
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+            className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3"
             data-testid="grid-plans"
           >
             {filtered.map((plan) => (
@@ -818,6 +834,7 @@ export default function SavedPlans() {
             ))}
           </div>
         )}
+        </section>
       </div>
 
       <PlanDetailDialog

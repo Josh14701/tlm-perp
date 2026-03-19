@@ -856,10 +856,19 @@ export default function Tasks() {
         </div>
       </header>
 
-      <div className="p-6 space-y-6 max-w-[1400px]">
+      <div className="mx-auto max-w-[1380px] space-y-8 px-4 py-5 md:px-6 md:py-8">
+        <section className="space-y-4">
+          <div className="space-y-1">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground/70">
+              Snapshot
+            </p>
+            <h2 className="text-lg font-semibold tracking-[-0.03em] text-slate-900 dark:text-white">
+              Team workload and delivery pressure
+            </h2>
+          </div>
         {/* ── Stats Row ────────────────────────────── */}
         <div
-          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3"
+          className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5"
           data-testid="task-stats-row"
         >
           <Card className="glass-card" data-testid="stat-completion">
@@ -952,6 +961,7 @@ export default function Tasks() {
             </CardContent>
           </Card>
         </div>
+        </section>
 
         {/* ── Kanban Board ─────────────────────────── */}
         {tasksLoading ? (
@@ -965,7 +975,7 @@ export default function Tasks() {
             onDragEnd={handleDragEnd}
           >
             <div
-              className="grid grid-cols-1 md:grid-cols-3 gap-4"
+              className="grid grid-cols-1 gap-5 md:grid-cols-3"
               data-testid="kanban-board"
             >
               {COLUMN_CONFIG.map((config) => (

@@ -429,65 +429,65 @@ export default function Dashboard() {
         </div>
       </header>
 
-      <div className="mx-auto max-w-[1380px] space-y-5 p-4 md:p-6">
-        <div className="grid gap-5 xl:grid-cols-[1.45fr_0.9fr]">
+      <div className="mx-auto max-w-[1380px] space-y-8 px-4 py-5 md:px-6 md:py-8">
+        <div className="grid gap-6 xl:grid-cols-[1.45fr_0.9fr]">
           <Card className="glass-card overflow-hidden" data-testid="dashboard-hero">
-            <CardContent className="p-6 md:p-7">
-              <div className="grid gap-6 lg:grid-cols-[1.3fr_0.95fr] lg:items-start">
-                <div className="space-y-5">
-                  <div className="space-y-3">
+            <CardContent className="p-7 md:p-9">
+              <div className="grid gap-8 lg:grid-cols-[1.3fr_0.95fr] lg:items-start">
+                <div className="space-y-7">
+                  <div className="space-y-4">
                     <Badge variant="outline" className="border-white/50 bg-white/45 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-700 dark:text-slate-200">
                       Agency cockpit
                     </Badge>
-                    <div className="space-y-2">
-                      <h2 className="max-w-[12ch] text-3xl font-semibold leading-none tracking-[-0.05em] text-slate-900 md:text-5xl dark:text-white">
+                    <div className="space-y-3">
+                      <h2 className="max-w-[12ch] text-3xl font-semibold leading-[0.92] tracking-[-0.05em] text-slate-900 md:text-5xl dark:text-white">
                         Your agency at a glance.
                       </h2>
-                      <p className="max-w-[60ch] text-sm leading-6 text-muted-foreground md:text-[15px]">
+                      <p className="max-w-[58ch] text-sm leading-7 text-muted-foreground md:text-[15px]">
                         Track revenue momentum, delivery health, and client activity from a single frosted workspace built for fast daily check-ins.
                       </p>
                     </div>
                   </div>
 
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    <div className="glass-pill rounded-[24px] p-4">
+                  <div className="grid gap-4 sm:grid-cols-3">
+                    <div className="rounded-[26px] border border-white/30 bg-white/18 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.38)] backdrop-blur-xl">
                       <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/70">
                         Monthly recurring
                       </p>
-                      <p className="mt-3 text-2xl font-semibold tracking-[-0.04em] tabular-nums">
+                      <p className="mt-4 text-2xl font-semibold tracking-[-0.04em] tabular-nums">
                         {formatAUD(data?.totalMRR ?? 0)}
                       </p>
-                      <p className="mt-1 text-xs text-emerald-600 dark:text-emerald-400">
+                      <p className="mt-2 text-xs text-emerald-600 dark:text-emerald-400">
                         Stable retained revenue
                       </p>
                     </div>
-                    <div className="glass-pill rounded-[24px] p-4">
+                    <div className="rounded-[26px] border border-white/30 bg-white/18 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.38)] backdrop-blur-xl">
                       <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/70">
                         Pipeline
                       </p>
-                      <p className="mt-3 text-2xl font-semibold tracking-[-0.04em] tabular-nums">
+                      <p className="mt-4 text-2xl font-semibold tracking-[-0.04em] tabular-nums">
                         {formatAUD(data?.pipelineValue ?? 0)}
                       </p>
-                      <p className="mt-1 text-xs text-muted-foreground">
+                      <p className="mt-2 text-xs text-muted-foreground">
                         Open proposals in play
                       </p>
                     </div>
-                    <div className="glass-pill rounded-[24px] p-4">
+                    <div className="rounded-[26px] border border-white/30 bg-white/18 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.38)] backdrop-blur-xl">
                       <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/70">
                         Delivery health
                       </p>
-                      <p className="mt-3 text-2xl font-semibold tracking-[-0.04em] tabular-nums">
+                      <p className="mt-4 text-2xl font-semibold tracking-[-0.04em] tabular-nums">
                         {taskPct}%
                       </p>
-                      <p className="mt-1 text-xs text-muted-foreground">
+                      <p className="mt-2 text-xs text-muted-foreground">
                         Tasks completed
                       </p>
                     </div>
                   </div>
                 </div>
 
-                <div className="grid gap-3">
-                  <div className="glass-pill rounded-[26px] p-5">
+                <div className="grid gap-4">
+                  <div className="rounded-[28px] border border-white/30 bg-white/18 p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.38)] backdrop-blur-xl">
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground/70">
@@ -524,13 +524,13 @@ export default function Dashboard() {
                         </Button>
                       </div>
                     </div>
-                    <div className="mt-5 h-2 overflow-hidden rounded-full bg-white/50 dark:bg-white/8">
+                    <div className="mt-6 h-2 overflow-hidden rounded-full bg-white/50 dark:bg-white/8">
                       <div
                         className="h-full rounded-full bg-gradient-to-r from-slate-900 via-sky-500 to-cyan-400 transition-all duration-500 dark:from-slate-100 dark:via-sky-400 dark:to-cyan-300"
                         style={{ width: `${Math.min(goalPct, 100)}%` }}
                       />
                     </div>
-                    <div className="mt-3 flex items-center justify-between text-sm">
+                    <div className="mt-4 flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">
                         {monthlyGoal ? `${goalPct}% achieved` : "Create a target to unlock tracking"}
                       </span>
@@ -538,27 +538,27 @@ export default function Dashboard() {
                         {formatAUD(goalTarget)}
                       </span>
                     </div>
-                    <p className="mt-2 text-xs text-muted-foreground">
+                    <p className="mt-3 text-xs leading-6 text-muted-foreground">
                       {monthlyGoal ? "Edit or replace your target directly from here." : "Create a goal to start tracking revenue progress."}
                     </p>
                   </div>
 
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="glass-pill rounded-[24px] p-4">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="rounded-[24px] border border-white/30 bg-white/16 p-5 backdrop-blur-xl">
                       <div className="flex items-center gap-2 text-sm font-medium text-slate-900 dark:text-white">
                         <Users className="h-4 w-4 text-violet-500" />
                         Active clients
                       </div>
-                      <p className="mt-3 text-2xl font-semibold tabular-nums">
+                      <p className="mt-4 text-2xl font-semibold tabular-nums">
                         {data?.clientCounts.active ?? 0}
                       </p>
                     </div>
-                    <div className="glass-pill rounded-[24px] p-4">
+                    <div className="rounded-[24px] border border-white/30 bg-white/16 p-5 backdrop-blur-xl">
                       <div className="flex items-center gap-2 text-sm font-medium text-slate-900 dark:text-white">
                         <ListTodo className="h-4 w-4 text-sky-500" />
                         Tasks tracked
                       </div>
-                      <p className="mt-3 text-2xl font-semibold tabular-nums">
+                      <p className="mt-4 text-2xl font-semibold tabular-nums">
                         {taskTotal}
                       </p>
                     </div>
@@ -569,7 +569,7 @@ export default function Dashboard() {
           </Card>
 
           <Card className="glass-card glass-dark-card overflow-hidden text-white" data-testid="dashboard-live-panel">
-            <CardHeader className="pb-3">
+            <CardHeader className="pb-4">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <CardTitle className="text-2xl font-semibold tracking-[-0.04em] text-white">
@@ -584,9 +584,9 @@ export default function Dashboard() {
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="space-y-5">
-              <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
-                <div className="rounded-[22px] border border-white/10 bg-white/6 p-4">
+            <CardContent className="space-y-6">
+              <div className="grid gap-4 sm:grid-cols-3 xl:grid-cols-1">
+                <div className="rounded-[24px] border border-white/10 bg-white/6 p-5">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/45">
                     Revenue run rate
                   </p>
@@ -594,7 +594,7 @@ export default function Dashboard() {
                     {formatAUD(data?.totalMRR ?? 0)}
                   </p>
                 </div>
-                <div className="rounded-[22px] border border-white/10 bg-white/6 p-4">
+                <div className="rounded-[24px] border border-white/10 bg-white/6 p-5">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/45">
                     Pipeline coverage
                   </p>
@@ -602,7 +602,7 @@ export default function Dashboard() {
                     {formatAUD(data?.pipelineValue ?? 0)}
                   </p>
                 </div>
-                <div className="rounded-[22px] border border-white/10 bg-white/6 p-4">
+                <div className="rounded-[24px] border border-white/10 bg-white/6 p-5">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/45">
                     Task completion
                   </p>
@@ -643,8 +643,16 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        {/* ── KPI Row ─────────────────────────────────── */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" data-testid="kpi-row">
+        <section className="space-y-4">
+          <div className="space-y-1">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground/70">
+              Snapshot
+            </p>
+            <h3 className="text-lg font-semibold tracking-[-0.03em] text-slate-900 dark:text-white">
+              Core operating metrics
+            </h3>
+          </div>
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4" data-testid="kpi-row">
           {isLoading ? (
             <>
               <KPISkeleton />
@@ -752,9 +760,18 @@ export default function Dashboard() {
             </>
           )}
         </div>
+        </section>
 
-        {/* ── Middle Row: Revenue Goal + Client Status + Task Stats ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <section className="space-y-4">
+          <div className="space-y-1">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground/70">
+              Focus areas
+            </p>
+            <h3 className="text-lg font-semibold tracking-[-0.03em] text-slate-900 dark:text-white">
+              Revenue, clients, and task momentum
+            </h3>
+          </div>
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
           {/* Revenue Goal Tracker */}
           <Card data-testid="card-revenue-goal" className="glass-card">
             <CardHeader className="pb-3">
@@ -1002,9 +1019,18 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </div>
+        </section>
 
-        {/* ── Bottom Row: Top Clients + Activity Feed ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+        <section className="space-y-4">
+          <div className="space-y-1">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground/70">
+              Detail
+            </p>
+            <h3 className="text-lg font-semibold tracking-[-0.03em] text-slate-900 dark:text-white">
+              Client value and recent activity
+            </h3>
+          </div>
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-5">
           {/* Top Clients by MRR */}
           <Card className="lg:col-span-3 glass-card" data-testid="card-top-clients">
             <CardHeader className="pb-3">
@@ -1106,6 +1132,7 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </div>
+        </section>
       </div>
 
       <RevenueGoalDialog
