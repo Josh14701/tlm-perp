@@ -60,7 +60,7 @@ const IDEA_TYPE_STYLES: Record<string, string> = {
   story:
     "bg-orange-500/15 text-orange-600 dark:text-orange-400 border-orange-500/25",
   reel: "bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/25",
-  ugc: "bg-teal-500/15 text-teal-600 dark:text-teal-400 border-teal-500/25",
+  ugc: "bg-orange-500/15 text-orange-600 dark:text-orange-400 border-orange-500/25",
   text_post:
     "bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border-indigo-500/25",
 };
@@ -132,7 +132,7 @@ function StatsRow({ plans }: { plans: ContentPlan[] }) {
       data-testid="stats-row"
     >
       {items.map((item) => (
-        <Card key={item.label} data-testid={`stat-card-${item.label.toLowerCase().replace(/\s/g, "-")}`}>
+        <Card key={item.label} className="glass-card" data-testid={`stat-card-${item.label.toLowerCase().replace(/\s/g, "-")}`}>
           <CardContent className="flex items-center gap-3 p-4">
             <item.icon className={`h-5 w-5 flex-shrink-0 ${item.color}`} />
             <div>
@@ -705,12 +705,15 @@ export default function SavedPlans() {
 
   return (
     <div className="flex-1 overflow-auto" data-testid="page-saved-plans">
-      <header className="flex items-center gap-4 border-b px-6 py-4">
-        <SidebarTrigger data-testid="sidebar-trigger" />
-        <h1 className="text-lg font-semibold" data-testid="page-title">
-          Saved Plans
-        </h1>
-        <div className="ml-auto">
+      <header className="sticky top-0 z-10 glass-header px-6 py-4">
+        <div className="flex items-center gap-4">
+          <SidebarTrigger data-testid="sidebar-trigger" />
+          <div className="flex-1">
+            <h1 className="text-xl font-bold tracking-tight" data-testid="page-title">
+              Saved Plans
+            </h1>
+            <p className="text-sm text-muted-foreground">Browse and manage content plans</p>
+          </div>
           <Button size="sm" onClick={() => setCreateOpen(true)} data-testid="button-new-plan">
             <Plus className="h-4 w-4 mr-1.5" />
             New Plan

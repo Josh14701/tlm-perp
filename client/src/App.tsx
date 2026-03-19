@@ -63,10 +63,11 @@ function AppLayout() {
 
   return (
     <SidebarProvider
+      className="app-shell"
       style={{ "--sidebar-width": "16rem" } as React.CSSProperties}
     >
       <AppSidebar />
-      <SidebarInset>
+      <SidebarInset className="app-main">
         <AppRouter />
       </SidebarInset>
     </SidebarProvider>

@@ -930,11 +930,16 @@ export default function SalesPipeline() {
   return (
     <div className="flex-1 flex flex-col overflow-hidden" data-testid="page-sales">
       {/* Header */}
-      <header className="flex items-center gap-4 border-b px-6 py-4 shrink-0">
-        <SidebarTrigger data-testid="sidebar-trigger" />
-        <h1 className="text-lg font-semibold" data-testid="page-title">
-          Sales Pipeline
-        </h1>
+      <header className="sticky top-0 z-10 glass-header px-6 py-4 shrink-0">
+        <div className="flex items-center gap-4">
+          <SidebarTrigger data-testid="sidebar-trigger" />
+          <div className="flex-1">
+            <h1 className="text-xl font-bold tracking-tight" data-testid="page-title">
+              Sales Pipeline
+            </h1>
+            <p className="text-sm text-muted-foreground">Track leads and deals</p>
+          </div>
+        </div>
       </header>
 
       {/* Content */}

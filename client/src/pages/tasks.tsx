@@ -89,9 +89,9 @@ const COLUMN_CONFIG: { status: TaskStatus; label: string; color: string; bg: str
   {
     status: "in_progress",
     label: "In Progress",
-    color: "text-blue-600 dark:text-blue-400",
-    bg: "bg-blue-500/5",
-    border: "border-blue-500/20",
+    color: "text-sky-600 dark:text-sky-400",
+    bg: "bg-sky-500/5",
+    border: "border-sky-500/20",
   },
   {
     status: "complete",
@@ -836,20 +836,24 @@ export default function Tasks() {
   return (
     <div className="flex-1 overflow-auto" data-testid="page-tasks">
       {/* Header */}
-      <header className="flex items-center gap-4 border-b px-6 py-4">
-        <SidebarTrigger data-testid="sidebar-trigger" />
-        <h1 className="text-lg font-semibold" data-testid="page-title">
-          Tasks
-        </h1>
-        <div className="flex-1" />
-        <Button
-          size="sm"
-          onClick={handleOpenCreate}
-          data-testid="btn-add-task"
-        >
-          <Plus className="h-4 w-4 mr-1.5" />
-          Add Task
-        </Button>
+      <header className="sticky top-0 z-10 glass-header px-6 py-4">
+        <div className="flex items-center gap-4">
+          <SidebarTrigger data-testid="sidebar-trigger" />
+          <div className="flex-1">
+            <h1 className="text-xl font-bold tracking-tight" data-testid="page-title">
+              Tasks
+            </h1>
+            <p className="text-sm text-muted-foreground">Manage and track your team's work</p>
+          </div>
+          <Button
+            size="sm"
+            onClick={handleOpenCreate}
+            data-testid="btn-add-task"
+          >
+            <Plus className="h-4 w-4 mr-1.5" />
+            Add Task
+          </Button>
+        </div>
       </header>
 
       <div className="p-6 space-y-6 max-w-[1400px]">
@@ -858,92 +862,92 @@ export default function Tasks() {
           className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3"
           data-testid="task-stats-row"
         >
-          <Card data-testid="stat-completion">
+          <Card className="glass-card" data-testid="stat-completion">
             <CardContent className="p-3 flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
                 <CheckCircle2 className="h-4 w-4 text-primary" />
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Completion</p>
-                <p className="text-lg font-bold tabular-nums" data-testid="value-completion">
+                <div className="text-lg font-bold tabular-nums" data-testid="value-completion">
                   {tasksLoading ? (
                     <Skeleton className="h-5 w-10 inline-block" />
                   ) : (
                     `${stats.completionPct}%`
                   )}
-                </p>
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card data-testid="stat-overdue">
+          <Card className="glass-card" data-testid="stat-overdue">
             <CardContent className="p-3 flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-500/10">
                 <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Overdue</p>
-                <p className="text-lg font-bold tabular-nums" data-testid="value-overdue">
+                <div className="text-lg font-bold tabular-nums" data-testid="value-overdue">
                   {tasksLoading ? (
                     <Skeleton className="h-5 w-10 inline-block" />
                   ) : (
                     stats.overdue
                   )}
-                </p>
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card data-testid="stat-due-today">
+          <Card className="glass-card" data-testid="stat-due-today">
             <CardContent className="p-3 flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/10">
                 <CalendarDays className="h-4 w-4 text-amber-600 dark:text-amber-400" />
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Due Today</p>
-                <p className="text-lg font-bold tabular-nums" data-testid="value-due-today">
+                <div className="text-lg font-bold tabular-nums" data-testid="value-due-today">
                   {tasksLoading ? (
                     <Skeleton className="h-5 w-10 inline-block" />
                   ) : (
                     stats.dueToday
                   )}
-                </p>
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card data-testid="stat-due-week">
+          <Card className="glass-card" data-testid="stat-due-week">
             <CardContent className="p-3 flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-500/10">
                 <Clock className="h-4 w-4 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Due This Week</p>
-                <p className="text-lg font-bold tabular-nums" data-testid="value-due-week">
+                <div className="text-lg font-bold tabular-nums" data-testid="value-due-week">
                   {tasksLoading ? (
                     <Skeleton className="h-5 w-10 inline-block" />
                   ) : (
                     stats.dueThisWeek
                   )}
-                </p>
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card data-testid="stat-active">
+          <Card className="glass-card" data-testid="stat-active">
             <CardContent className="p-3 flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
                 <ListTodo className="h-4 w-4 text-primary" />
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Total Active</p>
-                <p className="text-lg font-bold tabular-nums" data-testid="value-active">
+                <div className="text-lg font-bold tabular-nums" data-testid="value-active">
                   {tasksLoading ? (
                     <Skeleton className="h-5 w-10 inline-block" />
                   ) : (
                     stats.active
                   )}
-                </p>
+                </div>
               </div>
             </CardContent>
           </Card>

@@ -689,7 +689,7 @@ function ContractDetailDialog({
 
           {/* Financial */}
           <div className="grid grid-cols-2 gap-4" data-testid="section-financials">
-            <Card className="p-4">
+            <Card className="p-4 glass-card">
               <div className="flex items-center gap-2 text-muted-foreground mb-1">
                 <DollarSign className="h-3.5 w-3.5" />
                 <span className="text-xs font-medium uppercase tracking-wider">Monthly Value</span>
@@ -705,7 +705,7 @@ function ContractDetailDialog({
                     : "N/A"}
               </p>
             </Card>
-            <Card className="p-4">
+            <Card className="p-4 glass-card">
               <div className="flex items-center gap-2 text-muted-foreground mb-1">
                 <Calendar className="h-3.5 w-3.5" />
                 <span className="text-xs font-medium uppercase tracking-wider">Contract Period</span>
@@ -945,7 +945,7 @@ function ContractDetailDialog({
 
 function ContractsTableSkeleton() {
   return (
-    <Card data-testid="skeleton-contracts-table">
+    <Card className="glass-card" data-testid="skeleton-contracts-table">
       <CardContent className="p-0">
         <div className="space-y-0">
           {Array.from({ length: 5 }).map((_, i) => (
@@ -1019,13 +1019,13 @@ export default function Contracts() {
 
   return (
     <div className="flex-1 overflow-auto" data-testid="page-contracts">
-      <header className="flex items-center gap-4 border-b px-6 py-4">
-        <SidebarTrigger data-testid="sidebar-trigger" />
-        <div className="flex items-center gap-2">
-          <FileText className="h-5 w-5 text-muted-foreground" />
-          <h1 className="text-lg font-semibold" data-testid="page-title">Contracts</h1>
-        </div>
-        <div className="ml-auto">
+      <header className="sticky top-0 z-10 glass-header px-6 py-4">
+        <div className="flex items-center gap-4">
+          <SidebarTrigger data-testid="sidebar-trigger" />
+          <div className="flex-1">
+            <h1 className="text-xl font-bold tracking-tight" data-testid="page-title">Contracts</h1>
+            <p className="text-sm text-muted-foreground">Manage client agreements</p>
+          </div>
           <Button onClick={() => setCreateOpen(true)} size="sm" data-testid="button-create-contract">
             <Plus className="h-4 w-4 mr-1.5" />
             New Contract
@@ -1037,15 +1037,15 @@ export default function Contracts() {
         {/* Summary Cards */}
         {!isLoading && (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4" data-testid="section-summary">
-            <Card className="p-4" data-testid="card-active-contracts">
+            <Card className="p-4 glass-card" data-testid="card-active-contracts">
               <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Active Contracts</div>
               <div className="text-2xl font-semibold mt-1" data-testid="text-active-count">{activeCount}</div>
             </Card>
-            <Card className="p-4" data-testid="card-monthly-revenue">
+            <Card className="p-4 glass-card" data-testid="card-monthly-revenue">
               <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Monthly Revenue</div>
               <div className="text-2xl font-semibold mt-1" data-testid="text-monthly-revenue">{formatAUD(totalMonthly)}</div>
             </Card>
-            <Card className="p-4" data-testid="card-draft-contracts">
+            <Card className="p-4 glass-card" data-testid="card-draft-contracts">
               <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Drafts</div>
               <div className="text-2xl font-semibold mt-1" data-testid="text-draft-count">{draftCount}</div>
             </Card>
@@ -1108,7 +1108,7 @@ export default function Contracts() {
             )}
           </div>
         ) : (
-          <Card data-testid="section-contracts-table">
+          <Card className="glass-card" data-testid="section-contracts-table">
             <CardContent className="p-0">
               <Table>
                 <TableHeader>

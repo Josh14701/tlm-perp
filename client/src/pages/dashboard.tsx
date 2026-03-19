@@ -50,6 +50,7 @@ import {
   Pencil,
   Plus,
   Trash2,
+  ArrowUpRight,
 } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -88,16 +89,16 @@ const formatAUD = (value: number) =>
 
 const statusColor: Record<string, string> = {
   active: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/20",
-  onboarding: "bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/20",
+  onboarding: "bg-sky-500/15 text-sky-700 dark:text-sky-400 border-sky-500/20",
   paused: "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/20",
-  churned: "bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/20",
+  churned: "bg-rose-500/15 text-rose-700 dark:text-rose-400 border-rose-500/20",
 };
 
 const statusBarColor: Record<string, string> = {
   active: "bg-emerald-500",
-  onboarding: "bg-blue-500",
+  onboarding: "bg-sky-500",
   paused: "bg-amber-500",
-  churned: "bg-red-500",
+  churned: "bg-rose-500",
 };
 
 function getActivityIcon(action: string) {
@@ -111,6 +112,21 @@ function getActivityIcon(action: string) {
   if (lower.includes("analytic")) return <BarChart3 className="h-4 w-4" />;
   return <Zap className="h-4 w-4" />;
 }
+
+// ── KPI card config ────────────────────────────────────
+const kpiGradients = [
+  "from-orange-500/12 to-amber-500/8",
+  "from-violet-500/12 to-purple-500/8",
+  "from-rose-500/12 to-pink-500/8",
+  "from-emerald-500/12 to-teal-500/8",
+];
+
+const kpiIconColors = [
+  "text-orange-600 dark:text-orange-400 bg-orange-500/12",
+  "text-violet-600 dark:text-violet-400 bg-violet-500/12",
+  "text-rose-600 dark:text-rose-400 bg-rose-500/12",
+  "text-emerald-600 dark:text-emerald-400 bg-emerald-500/12",
+];
 
 // ── Progress Ring (SVG donut) ──────────────────────────
 function ProgressRing({
@@ -169,13 +185,13 @@ function ProgressRing({
 // ── Skeleton Loaders ───────────────────────────────────
 function KPISkeleton() {
   return (
-    <Card>
+    <Card className="overflow-hidden glass-card">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <Skeleton className="h-4 w-20" />
-        <Skeleton className="h-5 w-5 rounded" />
+        <Skeleton className="h-8 w-8 rounded-lg" />
       </CardHeader>
       <CardContent>
-        <Skeleton className="h-7 w-28 mb-1" />
+        <Skeleton className="h-8 w-28 mb-1" />
         <Skeleton className="h-3 w-16" />
       </CardContent>
     </Card>
@@ -201,7 +217,7 @@ function ActivitySkeleton() {
     <div className="space-y-4">
       {Array.from({ length: 6 }).map((_, i) => (
         <div key={i} className="flex items-start gap-3">
-          <Skeleton className="h-8 w-8 rounded-full shrink-0" />
+          <Skeleton className="h-9 w-9 rounded-xl shrink-0" />
           <div className="flex-1 space-y-1.5">
             <Skeleton className="h-3.5 w-full" />
             <Skeleton className="h-3 w-20" />
@@ -227,7 +243,6 @@ function RevenueGoalDialog({
   const [target, setTarget] = useState(editingGoal?.target?.toString() ?? "");
   const [period, setPeriod] = useState(editingGoal?.period ?? "");
 
-  // Reset form when editingGoal changes
   useState(() => {
     setType(editingGoal?.type ?? "monthly");
     setTarget(editingGoal?.target?.toString() ?? "");
@@ -285,7 +300,6 @@ function RevenueGoalDialog({
     }
   }
 
-  // Generate current period default
   const now = new Date();
   const defaultPeriod = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 
@@ -372,32 +386,237 @@ export default function Dashboard() {
   const taskComplete = data?.taskCompletionStats.complete ?? 0;
   const taskPct = taskTotal > 0 ? Math.round((taskComplete / taskTotal) * 100) : 0;
 
-  // Find the monthly revenue goal (most recent)
   const monthlyGoal = data?.revenueGoals?.find((g) => g.type === "monthly");
   const goalTarget = monthlyGoal?.target ?? 0;
   const goalPct = goalTarget > 0 ? Math.round(((data?.totalMRR ?? 0) / goalTarget) * 100) : 0;
 
-  // Client status pie data
   const clientPieData = data
     ? [
-        { name: "Active", value: data.clientCounts.active, fill: "hsl(142, 71%, 45%)" },
-        { name: "Onboarding", value: data.clientCounts.onboarding, fill: "hsl(199, 89%, 48%)" },
-        { name: "Paused", value: data.clientCounts.paused, fill: "hsl(38, 92%, 50%)" },
-        { name: "Churned", value: data.clientCounts.churned, fill: "hsl(0, 72%, 51%)" },
+        { name: "Active", value: data.clientCounts.active, fill: "#10b981" },
+        { name: "Onboarding", value: data.clientCounts.onboarding, fill: "#0ea5e9" },
+        { name: "Paused", value: data.clientCounts.paused, fill: "#f59e0b" },
+        { name: "Churned", value: data.clientCounts.churned, fill: "#f43f5e" },
       ].filter((d) => d.value > 0)
     : [];
 
   return (
     <div className="flex-1 overflow-auto" data-testid="page-dashboard">
       {/* Header */}
-      <header className="flex items-center gap-4 border-b px-6 py-4">
-        <SidebarTrigger data-testid="sidebar-trigger" />
-        <h1 className="text-lg font-semibold" data-testid="page-title">
-          Dashboard
-        </h1>
+      <header className="sticky top-0 z-10 glass-header px-4 py-4 md:px-6">
+        <div className="mx-auto flex max-w-[1460px] items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <SidebarTrigger data-testid="sidebar-trigger" />
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-muted-foreground/70">
+                Executive overview
+              </p>
+              <h1 className="mt-1 text-2xl font-semibold tracking-[-0.04em] md:text-3xl" data-testid="page-title">
+                Dashboard
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Welcome back - here&apos;s your agency overview
+              </p>
+            </div>
+          </div>
+          <div className="hidden items-center gap-2 lg:flex">
+            <div className="glass-pill rounded-full px-4 py-2 text-sm text-muted-foreground">
+              {data?.clientCounts.total ?? 0} clients in workspace
+            </div>
+            <div className="glass-pill rounded-full px-4 py-2 text-sm font-medium text-foreground">
+              {monthlyGoal ? `${goalPct}% to monthly target` : "Set your monthly target"}
+            </div>
+          </div>
+        </div>
       </header>
 
-      <div className="p-6 space-y-6 max-w-[1400px]">
+      <div className="mx-auto max-w-[1460px] space-y-6 p-4 md:p-6">
+        <div className="grid gap-4 xl:grid-cols-[1.45fr_0.9fr]">
+          <Card className="glass-card overflow-hidden" data-testid="dashboard-hero">
+            <CardContent className="p-6 md:p-7">
+              <div className="grid gap-6 lg:grid-cols-[1.3fr_0.95fr] lg:items-start">
+                <div className="space-y-6">
+                  <div className="space-y-3">
+                    <Badge variant="outline" className="border-white/50 bg-white/45 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-orange-700 dark:text-orange-300">
+                      Agency cockpit
+                    </Badge>
+                    <div className="space-y-2">
+                      <h2 className="max-w-[12ch] text-3xl font-semibold leading-none tracking-[-0.05em] text-slate-900 md:text-5xl dark:text-white">
+                        Your agency at a glance.
+                      </h2>
+                      <p className="max-w-[60ch] text-sm leading-6 text-muted-foreground md:text-[15px]">
+                        Track revenue momentum, delivery health, and client activity from a single frosted workspace built for fast daily check-ins.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <div className="glass-pill rounded-[24px] p-4">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/70">
+                        Monthly recurring
+                      </p>
+                      <p className="mt-3 text-2xl font-semibold tracking-[-0.04em] tabular-nums">
+                        {formatAUD(data?.totalMRR ?? 0)}
+                      </p>
+                      <p className="mt-1 text-xs text-emerald-600 dark:text-emerald-400">
+                        Stable retained revenue
+                      </p>
+                    </div>
+                    <div className="glass-pill rounded-[24px] p-4">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/70">
+                        Pipeline
+                      </p>
+                      <p className="mt-3 text-2xl font-semibold tracking-[-0.04em] tabular-nums">
+                        {formatAUD(data?.pipelineValue ?? 0)}
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Open proposals in play
+                      </p>
+                    </div>
+                    <div className="glass-pill rounded-[24px] p-4">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/70">
+                        Delivery health
+                      </p>
+                      <p className="mt-3 text-2xl font-semibold tracking-[-0.04em] tabular-nums">
+                        {taskPct}%
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Tasks completed
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid gap-3">
+                  <div className="glass-pill rounded-[26px] p-5">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground/70">
+                          Goal tracking
+                        </p>
+                        <p className="mt-2 text-lg font-semibold tracking-[-0.03em]">
+                          {monthlyGoal ? "Monthly target progress" : "No monthly goal yet"}
+                        </p>
+                      </div>
+                      <div className="rounded-2xl bg-orange-500/12 p-2 text-orange-600 dark:text-orange-300">
+                        <Target className="h-4 w-4" />
+                      </div>
+                    </div>
+                    <div className="mt-5 h-2 overflow-hidden rounded-full bg-white/50 dark:bg-white/8">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-orange-400 via-amber-300 to-orange-500 transition-all duration-500"
+                        style={{ width: `${Math.min(goalPct, 100)}%` }}
+                      />
+                    </div>
+                    <div className="mt-3 flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">
+                        {monthlyGoal ? `${goalPct}% achieved` : "Create a target to unlock tracking"}
+                      </span>
+                      <span className="font-semibold tabular-nums">
+                        {formatAUD(goalTarget)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="glass-pill rounded-[24px] p-4">
+                      <div className="flex items-center gap-2 text-sm font-medium text-slate-900 dark:text-white">
+                        <Users className="h-4 w-4 text-violet-500" />
+                        Active clients
+                      </div>
+                      <p className="mt-3 text-2xl font-semibold tabular-nums">
+                        {data?.clientCounts.active ?? 0}
+                      </p>
+                    </div>
+                    <div className="glass-pill rounded-[24px] p-4">
+                      <div className="flex items-center gap-2 text-sm font-medium text-slate-900 dark:text-white">
+                        <ListTodo className="h-4 w-4 text-sky-500" />
+                        Tasks tracked
+                      </div>
+                      <p className="mt-3 text-2xl font-semibold tabular-nums">
+                        {taskTotal}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="glass-card glass-dark-card overflow-hidden text-white" data-testid="dashboard-live-panel">
+            <CardHeader className="pb-3">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <CardTitle className="text-2xl font-semibold tracking-[-0.04em] text-white">
+                    Live Pulse
+                  </CardTitle>
+                  <p className="mt-1 text-sm text-white/60">
+                    Most recent work happening across the studio
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-white/8 p-2 text-white/80">
+                  <CalendarDays className="h-4 w-4" />
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
+                <div className="rounded-[22px] border border-white/10 bg-white/6 p-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/45">
+                    Revenue run rate
+                  </p>
+                  <p className="mt-3 text-2xl font-semibold tabular-nums text-white">
+                    {formatAUD(data?.totalMRR ?? 0)}
+                  </p>
+                </div>
+                <div className="rounded-[22px] border border-white/10 bg-white/6 p-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/45">
+                    Pipeline coverage
+                  </p>
+                  <p className="mt-3 text-2xl font-semibold tabular-nums text-white">
+                    {formatAUD(data?.pipelineValue ?? 0)}
+                  </p>
+                </div>
+                <div className="rounded-[22px] border border-white/10 bg-white/6 p-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/45">
+                    Task completion
+                  </p>
+                  <p className="mt-3 text-2xl font-semibold tabular-nums text-white">
+                    {taskPct}%
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {isLoading
+                  ? Array.from({ length: 3 }).map((_, idx) => (
+                      <div key={idx} className="flex items-start gap-3">
+                        <div className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-orange-300 shadow-[0_0_18px_rgba(253,186,116,0.8)]" />
+                        <div className="min-w-0 flex-1">
+                          <Skeleton className="h-4 w-full rounded-full bg-white/10" />
+                          <Skeleton className="mt-2 h-3 w-24 rounded-full bg-white/10" />
+                        </div>
+                      </div>
+                    ))
+                  : (data?.recentActivity?.slice(0, 3) ?? []).map((item) => (
+                      <div key={item.id} className="flex items-start gap-3">
+                        <div className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-orange-300 shadow-[0_0_18px_rgba(253,186,116,0.8)]" />
+                        <div className="min-w-0">
+                          <p className="text-sm leading-6 text-white/90">
+                            {item.description}
+                          </p>
+                          <p className="mt-1 text-xs text-white/45">
+                            {item.createdAt
+                              ? formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })
+                              : "just now"}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* ── KPI Row ─────────────────────────────────── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" data-testid="kpi-row">
           {isLoading ? (
@@ -410,33 +629,42 @@ export default function Dashboard() {
           ) : (
             <>
               {/* Total MRR */}
-              <Card data-testid="kpi-total-mrr">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <Card className={`overflow-hidden relative glass-card`} data-testid="kpi-total-mrr">
+                <div className={`absolute inset-0 bg-gradient-to-br ${kpiGradients[0]} pointer-events-none`} />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
                   <CardTitle className="text-sm font-medium text-muted-foreground">
                     Total MRR
                   </CardTitle>
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                  <div className={`p-2 rounded-lg ${kpiIconColors[0]}`}>
+                    <DollarSign className="h-4 w-4" />
+                  </div>
                 </CardHeader>
-                <CardContent>
-                  <div className="text-xl font-bold tabular-nums" data-testid="value-total-mrr">
+                <CardContent className="relative">
+                  <div className="text-2xl font-bold tabular-nums" data-testid="value-total-mrr">
                     {formatAUD(data?.totalMRR ?? 0)}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                    <span className="inline-flex items-center text-emerald-600 dark:text-emerald-400 font-medium">
+                      <ArrowUpRight className="h-3 w-3" />
+                    </span>
                     from {data?.clientCounts.active ?? 0} active clients
                   </p>
                 </CardContent>
               </Card>
 
               {/* Active Clients */}
-              <Card data-testid="kpi-active-clients">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <Card className="overflow-hidden relative glass-card" data-testid="kpi-active-clients">
+                <div className={`absolute inset-0 bg-gradient-to-br ${kpiGradients[1]} pointer-events-none`} />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
                   <CardTitle className="text-sm font-medium text-muted-foreground">
                     Active Clients
                   </CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <div className={`p-2 rounded-lg ${kpiIconColors[1]}`}>
+                    <Users className="h-4 w-4" />
+                  </div>
                 </CardHeader>
-                <CardContent>
-                  <div className="text-xl font-bold tabular-nums" data-testid="value-active-clients">
+                <CardContent className="relative">
+                  <div className="text-2xl font-bold tabular-nums" data-testid="value-active-clients">
                     {data?.clientCounts.active ?? 0}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
@@ -446,15 +674,18 @@ export default function Dashboard() {
               </Card>
 
               {/* Pipeline Value */}
-              <Card data-testid="kpi-pipeline-value">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <Card className="overflow-hidden relative glass-card" data-testid="kpi-pipeline-value">
+                <div className={`absolute inset-0 bg-gradient-to-br ${kpiGradients[2]} pointer-events-none`} />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
                   <CardTitle className="text-sm font-medium text-muted-foreground">
                     Pipeline Value
                   </CardTitle>
-                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                  <div className={`p-2 rounded-lg ${kpiIconColors[2]}`}>
+                    <TrendingUp className="h-4 w-4" />
+                  </div>
                 </CardHeader>
-                <CardContent>
-                  <div className="text-xl font-bold tabular-nums" data-testid="value-pipeline">
+                <CardContent className="relative">
+                  <div className="text-2xl font-bold tabular-nums" data-testid="value-pipeline">
                     {formatAUD(data?.pipelineValue ?? 0)}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">open proposals</p>
@@ -462,26 +693,29 @@ export default function Dashboard() {
               </Card>
 
               {/* Task Completion */}
-              <Card data-testid="kpi-task-completion">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <Card className="overflow-hidden relative glass-card" data-testid="kpi-task-completion">
+                <div className={`absolute inset-0 bg-gradient-to-br ${kpiGradients[3]} pointer-events-none`} />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
                   <CardTitle className="text-sm font-medium text-muted-foreground">
                     Task Completion
                   </CardTitle>
-                  <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+                  <div className={`p-2 rounded-lg ${kpiIconColors[3]}`}>
+                    <CheckCircle2 className="h-4 w-4" />
+                  </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="relative">
                   <div className="flex items-center gap-3">
                     <ProgressRing
                       value={taskComplete}
                       max={taskTotal}
                       size={48}
                       strokeWidth={5}
-                      color="hsl(var(--chart-3))"
+                      color="#10b981"
                     >
                       <span className="text-xs font-bold tabular-nums">{taskPct}%</span>
                     </ProgressRing>
                     <div>
-                      <div className="text-xl font-bold tabular-nums" data-testid="value-task-pct">
+                      <div className="text-2xl font-bold tabular-nums" data-testid="value-task-pct">
                         {taskComplete}/{taskTotal}
                       </div>
                       <p className="text-xs text-muted-foreground">tasks done</p>
@@ -496,11 +730,13 @@ export default function Dashboard() {
         {/* ── Middle Row: Revenue Goal + Client Status + Task Stats ── */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Revenue Goal Tracker */}
-          <Card data-testid="card-revenue-goal">
+          <Card data-testid="card-revenue-goal" className="glass-card">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <Target className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <div className="p-1.5 rounded-md bg-orange-500/12">
+                    <Target className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                  </div>
                   Revenue Goal
                 </CardTitle>
                 <div className="flex gap-1">
@@ -508,19 +744,19 @@ export default function Dashboard() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-6 w-6"
+                      className="h-7 w-7 rounded-lg"
                       onClick={() => { setEditingGoal(monthlyGoal); setGoalDialogOpen(true); }}
                     >
-                      <Pencil className="h-3 w-3" />
+                      <Pencil className="h-3.5 w-3.5" />
                     </Button>
                   )}
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-6 w-6"
+                    className="h-7 w-7 rounded-lg"
                     onClick={() => { setEditingGoal(null); setGoalDialogOpen(true); }}
                   >
-                    <Plus className="h-3 w-3" />
+                    <Plus className="h-3.5 w-3.5" />
                   </Button>
                 </div>
               </div>
@@ -540,10 +776,10 @@ export default function Dashboard() {
                     strokeWidth={10}
                     color={
                       goalPct >= 100
-                        ? "hsl(142, 71%, 45%)"
+                        ? "#10b981"
                         : goalPct >= 70
-                        ? "hsl(var(--chart-2))"
-                        : "hsl(var(--chart-4))"
+                        ? "#0ea5e9"
+                        : "#f59e0b"
                     }
                   >
                     <span className="text-lg font-bold tabular-nums" data-testid="value-goal-pct">
@@ -553,9 +789,9 @@ export default function Dashboard() {
                   </ProgressRing>
 
                   <div className="text-center space-y-0.5">
-                    <p className="text-sm tabular-nums" data-testid="value-goal-current">
+                    <p className="text-sm tabular-nums font-medium" data-testid="value-goal-current">
                       {formatAUD(data?.totalMRR ?? 0)}{" "}
-                      <span className="text-muted-foreground">
+                      <span className="text-muted-foreground font-normal">
                         / {formatAUD(goalTarget)}
                       </span>
                     </p>
@@ -576,10 +812,12 @@ export default function Dashboard() {
           </Card>
 
           {/* Client Status Breakdown */}
-          <Card data-testid="card-client-status">
+          <Card data-testid="card-client-status" className="glass-card">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Users className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <div className="p-1.5 rounded-md bg-violet-500/10">
+                  <Users className="h-4 w-4 text-violet-600 dark:text-violet-400" />
+                </div>
                 Client Status
               </CardTitle>
             </CardHeader>
@@ -592,7 +830,6 @@ export default function Dashboard() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {/* Mini pie chart */}
                   <div className="flex items-center gap-4">
                     <div className="w-[80px] h-[80px] shrink-0">
                       <ResponsiveContainer width="100%" height="100%">
@@ -613,13 +850,13 @@ export default function Dashboard() {
                         </PieChart>
                       </ResponsiveContainer>
                     </div>
-                    <div className="flex-1 space-y-2">
+                    <div className="flex-1 space-y-2.5">
                       {(
                         [
-                          { key: "active", label: "Active", icon: <CheckCircle2 className="h-3 w-3" /> },
-                          { key: "onboarding", label: "Onboarding", icon: <UserPlus className="h-3 w-3" /> },
-                          { key: "paused", label: "Paused", icon: <Pause className="h-3 w-3" /> },
-                          { key: "churned", label: "Churned", icon: <UserMinus className="h-3 w-3" /> },
+                          { key: "active", label: "Active", icon: <CheckCircle2 className="h-3 w-3" />, color: "bg-emerald-500" },
+                          { key: "onboarding", label: "Onboarding", icon: <UserPlus className="h-3 w-3" />, color: "bg-sky-500" },
+                          { key: "paused", label: "Paused", icon: <Pause className="h-3 w-3" />, color: "bg-amber-500" },
+                          { key: "churned", label: "Churned", icon: <UserMinus className="h-3 w-3" />, color: "bg-rose-500" },
                         ] as const
                       ).map((item) => (
                         <div
@@ -628,9 +865,7 @@ export default function Dashboard() {
                           data-testid={`client-status-${item.key}`}
                         >
                           <div className="flex items-center gap-2">
-                            <span
-                              className={`w-2 h-2 rounded-full ${statusBarColor[item.key]}`}
-                            />
+                            <span className={`w-2 h-2 rounded-full ${item.color}`} />
                             <span className="text-xs text-muted-foreground flex items-center gap-1">
                               {item.icon}
                               {item.label}
@@ -645,7 +880,7 @@ export default function Dashboard() {
                   </div>
 
                   {/* Horizontal stacked bar */}
-                  <div className="w-full h-2.5 bg-muted rounded-full overflow-hidden flex" data-testid="client-status-bar">
+                  <div className="w-full h-2 bg-muted rounded-full overflow-hidden flex" data-testid="client-status-bar">
                     {(["active", "onboarding", "paused", "churned"] as const).map((status) => {
                       const count = data?.clientCounts[status] ?? 0;
                       const total = data?.clientCounts.total ?? 1;
@@ -666,71 +901,73 @@ export default function Dashboard() {
           </Card>
 
           {/* Task Stats */}
-          <Card data-testid="card-task-stats">
+          <Card data-testid="card-task-stats" className="glass-card">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <ListTodo className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <div className="p-1.5 rounded-md bg-orange-500/10">
+                  <ListTodo className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                </div>
                 Task Overview
               </CardTitle>
             </CardHeader>
             <CardContent>
               {isLoading ? (
                 <div className="grid grid-cols-2 gap-3">
-                  <Skeleton className="h-16 rounded-lg" />
-                  <Skeleton className="h-16 rounded-lg" />
-                  <Skeleton className="h-16 rounded-lg" />
-                  <Skeleton className="h-16 rounded-lg" />
+                  <Skeleton className="h-16 rounded-xl" />
+                  <Skeleton className="h-16 rounded-xl" />
+                  <Skeleton className="h-16 rounded-xl" />
+                  <Skeleton className="h-16 rounded-xl" />
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-3">
                   <div
-                    className="rounded-lg bg-muted/50 p-3 space-y-1"
+                    className="rounded-xl bg-gradient-to-br from-muted/60 to-muted/30 p-3.5 space-y-1"
                     data-testid="task-stat-todo"
                   >
                     <div className="flex items-center gap-1.5 text-muted-foreground">
                       <ListTodo className="h-3.5 w-3.5" />
-                      <span className="text-xs">To Do</span>
+                      <span className="text-xs font-medium">To Do</span>
                     </div>
-                    <p className="text-lg font-bold tabular-nums">
+                    <p className="text-xl font-bold tabular-nums">
                       {data?.taskCompletionStats.todo ?? 0}
                     </p>
                   </div>
 
                   <div
-                    className="rounded-lg bg-muted/50 p-3 space-y-1"
+                    className="rounded-xl bg-gradient-to-br from-sky-500/8 to-sky-500/3 p-3.5 space-y-1"
                     data-testid="task-stat-in-progress"
                   >
-                    <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400">
+                    <div className="flex items-center gap-1.5 text-sky-600 dark:text-sky-400">
                       <Clock className="h-3.5 w-3.5" />
-                      <span className="text-xs">In Progress</span>
+                      <span className="text-xs font-medium">In Progress</span>
                     </div>
-                    <p className="text-lg font-bold tabular-nums">
+                    <p className="text-xl font-bold tabular-nums">
                       {data?.taskCompletionStats.in_progress ?? 0}
                     </p>
                   </div>
 
                   <div
-                    className="rounded-lg bg-muted/50 p-3 space-y-1"
+                    className="rounded-xl bg-gradient-to-br from-emerald-500/8 to-emerald-500/3 p-3.5 space-y-1"
                     data-testid="task-stat-complete"
                   >
                     <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
                       <CheckCircle2 className="h-3.5 w-3.5" />
-                      <span className="text-xs">Complete</span>
+                      <span className="text-xs font-medium">Complete</span>
                     </div>
-                    <p className="text-lg font-bold tabular-nums">
+                    <p className="text-xl font-bold tabular-nums">
                       {data?.taskCompletionStats.complete ?? 0}
                     </p>
                   </div>
 
                   <div
-                    className="rounded-lg bg-muted/50 p-3 space-y-1"
+                    className="rounded-xl bg-gradient-to-br from-muted/60 to-muted/30 p-3.5 space-y-1"
                     data-testid="task-stat-total"
                   >
                     <div className="flex items-center gap-1.5 text-muted-foreground">
                       <Activity className="h-3.5 w-3.5" />
-                      <span className="text-xs">Total</span>
+                      <span className="text-xs font-medium">Total</span>
                     </div>
-                    <p className="text-lg font-bold tabular-nums">
+                    <p className="text-xl font-bold tabular-nums">
                       {data?.taskCompletionStats.total ?? 0}
                     </p>
                   </div>
@@ -743,10 +980,12 @@ export default function Dashboard() {
         {/* ── Bottom Row: Top Clients + Activity Feed ── */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
           {/* Top Clients by MRR */}
-          <Card className="lg:col-span-3" data-testid="card-top-clients">
+          <Card className="lg:col-span-3 glass-card" data-testid="card-top-clients">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <BarChart3 className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <div className="p-1.5 rounded-md bg-orange-500/12">
+                  <BarChart3 className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                </div>
                 Top Clients by MRR
               </CardTitle>
             </CardHeader>
@@ -760,24 +999,24 @@ export default function Dashboard() {
               ) : (
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead className="h-9 text-xs">Business</TableHead>
-                      <TableHead className="h-9 text-xs text-right">MRR</TableHead>
-                      <TableHead className="h-9 text-xs text-right">Status</TableHead>
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead className="h-9 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Business</TableHead>
+                      <TableHead className="h-9 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right">MRR</TableHead>
+                      <TableHead className="h-9 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right">Status</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {data?.topClientsByMRR.slice(0, 5).map((client, idx) => (
-                      <TableRow key={client.id} data-testid={`top-client-row-${idx}`}>
-                        <TableCell className="py-2.5 font-medium text-sm">
+                      <TableRow key={client.id} className="hover:bg-muted/50" data-testid={`top-client-row-${idx}`}>
+                        <TableCell className="py-3 font-medium text-sm">
                           {client.businessName}
                         </TableCell>
-                        <TableCell className="py-2.5 text-right tabular-nums text-sm">
+                        <TableCell className="py-3 text-right tabular-nums text-sm font-semibold">
                           {formatAUD(client.mrr ?? 0)}
                         </TableCell>
-                        <TableCell className="py-2.5 text-right">
+                        <TableCell className="py-3 text-right">
                           <Badge
-                            className={`text-[11px] px-2 py-0 font-medium ${
+                            className={`text-[11px] px-2.5 py-0.5 font-medium rounded-full ${
                               statusColor[client.status] ?? ""
                             }`}
                             variant="outline"
@@ -795,10 +1034,12 @@ export default function Dashboard() {
           </Card>
 
           {/* Recent Activity Feed */}
-          <Card className="lg:col-span-2" data-testid="card-recent-activity">
+          <Card className="lg:col-span-2 glass-card" data-testid="card-recent-activity">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Activity className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <div className="p-1.5 rounded-md bg-violet-500/10">
+                  <Activity className="h-4 w-4 text-violet-600 dark:text-violet-400" />
+                </div>
                 Recent Activity
               </CardTitle>
             </CardHeader>
@@ -810,14 +1051,14 @@ export default function Dashboard() {
                   No recent activity
                 </p>
               ) : (
-                <div className="space-y-4 max-h-[400px] overflow-y-auto pr-1">
+                <div className="space-y-3.5 max-h-[400px] overflow-y-auto pr-1">
                   {data?.recentActivity.slice(0, 10).map((item, idx) => (
                     <div
                       key={item.id}
                       className="flex items-start gap-3 group"
                       data-testid={`activity-item-${idx}`}
                     >
-                      <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                      <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-muted to-muted/60 text-muted-foreground group-hover:from-primary/10 group-hover:to-primary/5 group-hover:text-primary transition-colors">
                         {getActivityIcon(item.action)}
                       </div>
                       <div className="flex-1 min-w-0">

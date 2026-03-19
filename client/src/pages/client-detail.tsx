@@ -1115,38 +1115,42 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
 
   return (
     <div className="flex-1 overflow-auto" data-testid="page-client-detail">
-      <header className="flex items-center gap-4 border-b px-6 py-4">
-        <SidebarTrigger data-testid="sidebar-trigger" />
-        <Link href="/clients">
-          <Button variant="ghost" size="icon" className="h-8 w-8" data-testid="button-back-clients">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-        </Link>
-        {client ? (
-          <div className="flex items-center gap-3 flex-1 min-w-0">
-            <h1 className="text-lg font-semibold truncate" data-testid="text-client-name">
-              {client.businessName}
-            </h1>
-            <Badge
-              variant="outline"
-              className={STATUS_STYLES[client.status] || ""}
-              data-testid="badge-client-status"
-            >
-              {statusLabel(client.status)}
-            </Badge>
-            <span className="text-sm font-medium text-muted-foreground ml-2" data-testid="text-client-mrr">
-              {formatAUD(client.mrr)}/mo
-            </span>
-            <div className="ml-auto">
-              <Button variant="outline" size="sm" onClick={() => setEditOpen(true)} data-testid="button-edit-client">
-                <Pencil className="h-3.5 w-3.5 mr-1.5" />
-                Edit
-              </Button>
+      <header className="sticky top-0 z-10 glass-header px-6 py-4">
+        <div className="flex items-center gap-4">
+          <SidebarTrigger data-testid="sidebar-trigger" />
+          <Link href="/clients">
+            <Button variant="ghost" size="icon" className="h-8 w-8" data-testid="button-back-clients">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          </Link>
+          {client ? (
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              <div>
+                <h1 className="text-xl font-bold tracking-tight truncate" data-testid="text-client-name">
+                  {client.businessName}
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  {formatAUD(client.mrr)}/mo
+                </p>
+              </div>
+              <Badge
+                variant="outline"
+                className={`rounded-full ${STATUS_STYLES[client.status] || ""}`}
+                data-testid="badge-client-status"
+              >
+                {statusLabel(client.status)}
+              </Badge>
+              <div className="ml-auto">
+                <Button variant="outline" size="sm" onClick={() => setEditOpen(true)} data-testid="button-edit-client">
+                  <Pencil className="h-3.5 w-3.5 mr-1.5" />
+                  Edit
+                </Button>
+              </div>
             </div>
-          </div>
-        ) : (
-          !isLoading && <h1 className="text-lg font-semibold" data-testid="page-title">Client Detail</h1>
-        )}
+          ) : (
+            !isLoading && <h1 className="text-xl font-bold tracking-tight" data-testid="page-title">Client Detail</h1>
+          )}
+        </div>
       </header>
 
       {isLoading ? (

@@ -338,9 +338,11 @@ export default function ContractDetail({ params }: { params: { id: string } }) {
   if (contractLoading) {
     return (
       <div className="flex-1 overflow-auto">
-        <header className="flex items-center gap-4 border-b px-6 py-4">
-          <SidebarTrigger />
-          <Skeleton className="h-6 w-48" />
+        <header className="sticky top-0 z-10 glass-header px-6 py-4">
+          <div className="flex items-center gap-4">
+            <SidebarTrigger />
+            <Skeleton className="h-6 w-48" />
+          </div>
         </header>
         <div className="p-6 max-w-4xl mx-auto space-y-6">
           <Skeleton className="h-8 w-64" />
@@ -358,12 +360,14 @@ export default function ContractDetail({ params }: { params: { id: string } }) {
   if (!contract) {
     return (
       <div className="flex-1 overflow-auto">
-        <header className="flex items-center gap-4 border-b px-6 py-4">
-          <SidebarTrigger />
-          <Button variant="ghost" size="sm" onClick={() => navigate("/contracts")}>
-            <ArrowLeft className="h-4 w-4 mr-1.5" />
-            Back
-          </Button>
+        <header className="sticky top-0 z-10 glass-header px-6 py-4">
+          <div className="flex items-center gap-4">
+            <SidebarTrigger />
+            <Button variant="ghost" size="sm" onClick={() => navigate("/contracts")}>
+              <ArrowLeft className="h-4 w-4 mr-1.5" />
+              Back
+            </Button>
+          </div>
         </header>
         <div className="flex flex-col items-center justify-center py-24 text-center">
           <FileText className="h-12 w-12 text-muted-foreground/40 mb-4" />
@@ -378,24 +382,30 @@ export default function ContractDetail({ params }: { params: { id: string } }) {
   return (
     <div className="flex-1 overflow-auto">
       {/* Header */}
-      <header className="flex items-center gap-4 border-b px-6 py-4">
-        <SidebarTrigger />
-        <Button variant="ghost" size="sm" onClick={() => navigate("/contracts")}>
-          <ArrowLeft className="h-4 w-4 mr-1.5" />
-          Back
-        </Button>
-        <div className="flex items-center gap-3">
-          <FileText className="h-5 w-5 text-muted-foreground" />
-          <h1 className="text-lg font-semibold">Contract — {clientName}</h1>
-          <Badge variant="outline" className={STATUS_STYLES[contract.status] || ""}>
-            {statusLabel(contract.status)}
-          </Badge>
-        </div>
-        <div className="ml-auto flex gap-2">
-          <Button size="sm" variant="outline" onClick={handleDownload}>
-            <Download className="h-4 w-4 mr-1.5" />
-            Download
+      <header className="sticky top-0 z-10 glass-header px-6 py-4">
+        <div className="flex items-center gap-4">
+          <SidebarTrigger />
+          <Button variant="ghost" size="sm" onClick={() => navigate("/contracts")}>
+            <ArrowLeft className="h-4 w-4 mr-1.5" />
+            Back
           </Button>
+          <div className="flex items-center gap-3 flex-1">
+            <div className="p-1.5 rounded-lg bg-orange-500/10">
+              <FileText className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold tracking-tight">Contract — {clientName}</h1>
+            </div>
+            <Badge variant="outline" className={`rounded-full ${STATUS_STYLES[contract.status] || ""}`}>
+              {statusLabel(contract.status)}
+            </Badge>
+          </div>
+          <div className="ml-auto flex gap-2">
+            <Button size="sm" variant="outline" onClick={handleDownload}>
+              <Download className="h-4 w-4 mr-1.5" />
+              Download
+            </Button>
+          </div>
         </div>
       </header>
 

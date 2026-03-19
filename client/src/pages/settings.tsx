@@ -1191,11 +1191,16 @@ export default function Settings() {
 
   return (
     <div className="flex-1 overflow-auto" data-testid="page-settings">
-      <header className="flex items-center gap-4 border-b px-6 py-4">
-        <SidebarTrigger data-testid="sidebar-trigger" />
-        <h1 className="text-lg font-semibold" data-testid="page-title">
-          Settings
-        </h1>
+      <header className="sticky top-0 z-10 glass-header px-6 py-4">
+        <div className="flex items-center gap-4">
+          <SidebarTrigger data-testid="sidebar-trigger" />
+          <div className="flex-1">
+            <h1 className="text-xl font-bold tracking-tight" data-testid="page-title">
+              Settings
+            </h1>
+            <p className="text-sm text-muted-foreground">Configure your workspace</p>
+          </div>
+        </div>
       </header>
 
       <div className="p-6">

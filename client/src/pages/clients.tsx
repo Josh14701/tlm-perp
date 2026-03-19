@@ -36,7 +36,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Search, Building2, Globe, Calendar } from "lucide-react";
+import { Plus, Search, Building2, Globe, Calendar, Users, ArrowUpRight } from "lucide-react";
 import type { Client } from "@shared/schema";
 
 // ── Helpers ─────────────────────────────────────────
@@ -53,9 +53,16 @@ function formatAUD(value: number | null | undefined): string {
 
 const STATUS_STYLES: Record<string, string> = {
   active: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/25",
-  onboarding: "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/25",
+  onboarding: "bg-sky-500/15 text-sky-600 dark:text-sky-400 border-sky-500/25",
   paused: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/25",
-  churned: "bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/25",
+  churned: "bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/25",
+};
+
+const STATUS_DOT: Record<string, string> = {
+  active: "bg-emerald-500",
+  onboarding: "bg-sky-500",
+  paused: "bg-amber-500",
+  churned: "bg-rose-500",
 };
 
 function statusLabel(status: string): string {
@@ -282,16 +289,19 @@ function ClientCard({ client }: { client: Client }) {
   return (
     <Link href={`/clients/${client.id}`}>
       <Card
-        className="cursor-pointer transition-all hover:shadow-md hover:border-primary/30 group"
+        className="cursor-pointer card-hover glass-card group overflow-hidden relative"
         data-testid={`card-client-${client.id}`}
       >
-        <CardHeader className="pb-3">
+        {/* Top accent bar */}
+        <div className={`absolute top-0 left-0 right-0 h-1 ${STATUS_DOT[client.status] || "bg-muted"}`} />
+
+        <CardHeader className="pb-3 pt-5">
           <div className="flex items-start justify-between gap-2">
             <CardTitle className="text-base font-semibold leading-tight group-hover:text-primary transition-colors" data-testid={`text-client-name-${client.id}`}>
               {client.businessName}
             </CardTitle>
             <Badge
-              className={STATUS_STYLES[client.status] || ""}
+              className={`${STATUS_STYLES[client.status] || ""} rounded-full text-[11px] px-2.5 py-0.5`}
               variant="outline"
               data-testid={`badge-status-${client.id}`}
             >
@@ -302,25 +312,29 @@ function ClientCard({ client }: { client: Client }) {
         <CardContent className="space-y-2.5">
           {client.industry && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground" data-testid={`text-industry-${client.id}`}>
-              <Building2 className="h-3.5 w-3.5 flex-shrink-0" />
+              <div className="p-1 rounded bg-muted/60">
+                <Building2 className="h-3 w-3" />
+              </div>
               <span className="truncate">{client.industry}</span>
             </div>
           )}
           {client.website && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground" data-testid={`text-website-${client.id}`}>
-              <Globe className="h-3.5 w-3.5 flex-shrink-0" />
+              <div className="p-1 rounded bg-muted/60">
+                <Globe className="h-3 w-3" />
+              </div>
               <span className="truncate">{client.website}</span>
             </div>
           )}
-          <div className="flex items-center justify-between pt-1 border-t">
-            <span className="text-sm font-semibold" data-testid={`text-mrr-${client.id}`}>
+          <div className="flex items-center justify-between pt-2 border-t border-dashed">
+            <span className="text-sm font-bold" data-testid={`text-mrr-${client.id}`}>
               {formatAUD(client.mrr)} <span className="text-xs font-normal text-muted-foreground">/mo</span>
             </span>
             {(client.contractStart || client.contractEnd) && (
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground" data-testid={`text-contract-dates-${client.id}`}>
                 <Calendar className="h-3 w-3" />
                 {client.contractStart && <span>{client.contractStart}</span>}
-                {client.contractStart && client.contractEnd && <span>–</span>}
+                {client.contractStart && client.contractEnd && <span>-</span>}
                 {client.contractEnd && <span>{client.contractEnd}</span>}
               </div>
             )}
@@ -335,8 +349,9 @@ function ClientCard({ client }: { client: Client }) {
 
 function ClientCardSkeleton() {
   return (
-    <Card data-testid="skeleton-client-card">
-      <CardHeader className="pb-3">
+    <Card className="glass-card overflow-hidden" data-testid="skeleton-client-card">
+      <div className="h-1 bg-muted" />
+      <CardHeader className="pb-3 pt-5">
         <div className="flex items-start justify-between">
           <Skeleton className="h-5 w-32" />
           <Skeleton className="h-5 w-16 rounded-full" />
@@ -345,7 +360,7 @@ function ClientCardSkeleton() {
       <CardContent className="space-y-2.5">
         <Skeleton className="h-4 w-24" />
         <Skeleton className="h-4 w-36" />
-        <div className="flex items-center justify-between pt-1 border-t">
+        <div className="flex items-center justify-between pt-2 border-t border-dashed">
           <Skeleton className="h-4 w-20" />
           <Skeleton className="h-3 w-28" />
         </div>
@@ -372,13 +387,23 @@ export default function Clients() {
     return matchesSearch && matchesStatus;
   });
 
+  // Quick stats
+  const totalMRR = (clients ?? []).reduce((sum, c) => sum + (c.mrr ?? 0), 0);
+  const activeCount = (clients ?? []).filter(c => c.status === "active").length;
+
   return (
     <div className="flex-1 overflow-auto" data-testid="page-clients">
-      <header className="flex items-center gap-4 border-b px-6 py-4">
-        <SidebarTrigger data-testid="sidebar-trigger" />
-        <h1 className="text-lg font-semibold" data-testid="page-title">Clients</h1>
-        <div className="ml-auto">
-          <Button onClick={() => setDialogOpen(true)} size="sm" data-testid="button-add-client">
+      {/* Header */}
+      <header className="sticky top-0 z-10 glass-header px-6 py-4">
+        <div className="flex items-center gap-4">
+          <SidebarTrigger data-testid="sidebar-trigger" />
+          <div className="flex-1">
+            <h1 className="text-xl font-bold tracking-tight" data-testid="page-title">Clients</h1>
+            <p className="text-sm text-muted-foreground">
+              {isLoading ? "Loading..." : `${clients?.length ?? 0} clients \u00b7 ${formatAUD(totalMRR)} total MRR`}
+            </p>
+          </div>
+          <Button onClick={() => setDialogOpen(true)} size="sm" className="shadow-sm" data-testid="button-add-client">
             <Plus className="h-4 w-4 mr-1.5" />
             Add Client
           </Button>
@@ -421,11 +446,13 @@ export default function Clients() {
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center" data-testid="empty-state-clients">
-            <Building2 className="h-12 w-12 text-muted-foreground/40 mb-4" />
-            <h3 className="text-sm font-medium text-muted-foreground">
+            <div className="p-4 rounded-2xl bg-muted/50 mb-4">
+              <Building2 className="h-10 w-10 text-muted-foreground/40" />
+            </div>
+            <h3 className="text-sm font-semibold text-muted-foreground">
               {clients && clients.length > 0 ? "No clients match your filters" : "No clients yet"}
             </h3>
-            <p className="text-xs text-muted-foreground/60 mt-1">
+            <p className="text-xs text-muted-foreground/60 mt-1 max-w-[300px]">
               {clients && clients.length > 0
                 ? "Try adjusting your search or status filter."
                 : "Get started by adding your first client."}

@@ -12,8 +12,9 @@ const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(() => {
-    if (typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches) {
-      return "dark";
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("tlm-theme") as Theme | null;
+      if (saved === "dark" || saved === "light") return saved;
     }
     return "light";
   });
@@ -25,6 +26,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     } else {
       root.classList.remove("dark");
     }
+    localStorage.setItem("tlm-theme", theme);
   }, [theme]);
 
   const toggleTheme = useCallback(() => {

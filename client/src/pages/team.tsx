@@ -539,17 +539,19 @@ export default function Team() {
 
   return (
     <div className="flex-1 overflow-auto" data-testid="page-team">
-      <header className="flex items-center gap-4 border-b px-6 py-4">
-        <SidebarTrigger data-testid="sidebar-trigger" />
-        <div className="flex items-center gap-2">
-          <Users className="h-5 w-5 text-muted-foreground" />
-          <h1 className="text-lg font-semibold" data-testid="page-title">Team</h1>
-        </div>
-        <div className="ml-auto">
-          <Button onClick={() => setInviteOpen(true)} size="sm" data-testid="button-invite-member">
-            <UserPlus className="h-4 w-4 mr-1.5" />
-            Invite Member
-          </Button>
+      <header className="sticky top-0 z-10 glass-header px-6 py-4">
+        <div className="flex items-center gap-4">
+          <SidebarTrigger data-testid="sidebar-trigger" />
+          <div className="flex-1">
+            <h1 className="text-xl font-bold tracking-tight" data-testid="page-title">Team</h1>
+            <p className="text-sm text-muted-foreground">Manage team members and roles</p>
+          </div>
+          <div className="ml-auto">
+            <Button onClick={() => setInviteOpen(true)} size="sm" data-testid="button-invite-member">
+              <UserPlus className="h-4 w-4 mr-1.5" />
+              Invite Member
+            </Button>
+          </div>
         </div>
       </header>
 

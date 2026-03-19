@@ -277,15 +277,15 @@ export default function Invoices() {
 
   return (
     <div className="flex-1 overflow-auto" data-testid="page-invoices">
-      <header className="flex items-center gap-4 border-b px-6 py-4">
-        <SidebarTrigger data-testid="sidebar-trigger" />
-        <div className="flex items-center gap-2">
-          <Receipt className="h-5 w-5 text-muted-foreground" />
-          <h1 className="text-lg font-semibold" data-testid="page-title">
-            Invoices
-          </h1>
-        </div>
-        <div className="ml-auto">
+      <header className="sticky top-0 z-10 glass-header px-6 py-4">
+        <div className="flex items-center gap-4">
+          <SidebarTrigger data-testid="sidebar-trigger" />
+          <div className="flex-1">
+            <h1 className="text-xl font-bold tracking-tight" data-testid="page-title">
+              Invoices
+            </h1>
+            <p className="text-sm text-muted-foreground">Track payments and billing</p>
+          </div>
           <Button size="sm" onClick={() => setCreateOpen(true)} data-testid="button-create-invoice">
             <Plus className="h-4 w-4 mr-1.5" />
             New Invoice
@@ -297,21 +297,21 @@ export default function Invoices() {
         {/* Summary Cards */}
         {!invoicesLoading && (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4" data-testid="invoice-summary">
-            <Card className="p-4">
+            <Card className="p-4 glass-card">
               <div className="flex items-center gap-2 text-muted-foreground mb-1">
                 <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
                 <span className="text-xs font-medium uppercase tracking-wider">Paid</span>
               </div>
               <div className="text-2xl font-semibold">{formatAUD(totalPaid)}</div>
             </Card>
-            <Card className="p-4">
+            <Card className="p-4 glass-card">
               <div className="flex items-center gap-2 text-muted-foreground mb-1">
                 <Clock className="h-3.5 w-3.5 text-blue-500" />
                 <span className="text-xs font-medium uppercase tracking-wider">Outstanding</span>
               </div>
               <div className="text-2xl font-semibold">{formatAUD(totalOpen)}</div>
             </Card>
-            <Card className="p-4">
+            <Card className="p-4 glass-card">
               <div className="flex items-center gap-2 text-muted-foreground mb-1">
                 <DollarSign className="h-3.5 w-3.5" />
                 <span className="text-xs font-medium uppercase tracking-wider">Drafts</span>

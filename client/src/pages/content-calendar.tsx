@@ -1061,12 +1061,15 @@ export default function ContentCalendar() {
   return (
     <div className="flex-1 overflow-auto" data-testid="page-calendar">
       {/* Header */}
-      <header className="flex items-center gap-4 border-b px-6 py-4" data-testid="calendar-header">
-        <SidebarTrigger data-testid="sidebar-trigger" />
-        <h1 className="text-lg font-semibold" data-testid="page-title">
-          Content Calendar
-        </h1>
-        <div className="ml-auto">
+      <header className="sticky top-0 z-10 glass-header px-6 py-4" data-testid="calendar-header">
+        <div className="flex items-center gap-4">
+          <SidebarTrigger data-testid="sidebar-trigger" />
+          <div className="flex-1">
+            <h1 className="text-xl font-bold tracking-tight" data-testid="page-title">
+              Content Calendar
+            </h1>
+            <p className="text-sm text-muted-foreground">Plan and schedule your content</p>
+          </div>
           <Button onClick={handleAddContent} size="sm" data-testid="button-add-content">
             <Plus className="h-4 w-4 mr-1.5" />
             Add Content
