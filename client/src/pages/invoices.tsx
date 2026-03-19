@@ -46,6 +46,9 @@ import {
   Trash2,
   Building2,
   RefreshCw,
+  Sparkles,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import type { Client, Contract, InvoiceDraft } from "@shared/schema";
 
@@ -89,6 +92,30 @@ function draftTotal(lineItems: InvoiceLineItem[]) {
   return lineItems.reduce((sum, item) => sum + item.quantity * item.unitAmount, 0);
 }
 
+function buildDraftTemplate(contract: Contract | undefined, client: Client | undefined) {
+  if (!contract || !client) return null;
+
+  return {
+    clientId: client.id,
+    contractId: contract.id,
+    title: `${client.businessName} Monthly Services`,
+    recipientName: client.businessName,
+    recipientEmail: "",
+    billingCompany: client.businessName,
+    billingAbn: "",
+    paymentTerms: contract.paymentTerms || "Net 14 days",
+    dueInDays: "14",
+    notes: "",
+    lineItems: [
+      {
+        description: contract.serviceDescription,
+        quantity: 1,
+        unitAmount: contract.monthlyValue,
+      },
+    ] satisfies InvoiceLineItem[],
+  };
+}
+
 const STRIPE_INVOICE_STATUS_STYLES: Record<string, string> = {
   draft: "bg-gray-500/15 text-gray-600 dark:text-gray-400 border-gray-500/25",
   open: "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/25",
@@ -110,12 +137,14 @@ function InvoiceDraftDialog({
   clients,
   contracts,
   draft,
+  initialContractId,
 }: {
   open: boolean;
   onOpenChange: (value: boolean) => void;
   clients: Client[];
   contracts: Contract[];
   draft: InvoiceDraft | null;
+  initialContractId?: string | null;
 }) {
   const { toast } = useToast();
   const [clientId, setClientId] = useState("");
@@ -128,6 +157,7 @@ function InvoiceDraftDialog({
   const [paymentTerms, setPaymentTerms] = useState("Net 14 days");
   const [dueInDays, setDueInDays] = useState("14");
   const [notes, setNotes] = useState("");
+  const [advancedOpen, setAdvancedOpen] = useState(false);
   const [lineItems, setLineItems] = useState<InvoiceLineItem[]>([
     { description: "", quantity: 1, unitAmount: 0 },
   ]);
@@ -151,7 +181,31 @@ function InvoiceDraftDialog({
           ? (draft.lineItems as InvoiceLineItem[])
           : [{ description: "", quantity: 1, unitAmount: 0 }],
       );
+      setAdvancedOpen(true);
       return;
+    }
+
+    if (initialContractId) {
+      const selectedContract = contracts.find((contract) => contract.id === initialContractId);
+      const selectedClient = selectedContract
+        ? clients.find((client) => client.id === selectedContract.clientId)
+        : undefined;
+      const template = buildDraftTemplate(selectedContract, selectedClient);
+      if (template) {
+        setClientId(template.clientId);
+        setContractId(template.contractId);
+        setTitle(template.title);
+        setRecipientName(template.recipientName);
+        setRecipientEmail(template.recipientEmail);
+        setBillingCompany(template.billingCompany);
+        setBillingAbn(template.billingAbn);
+        setPaymentTerms(template.paymentTerms);
+        setDueInDays(template.dueInDays);
+        setNotes(template.notes);
+        setLineItems(template.lineItems);
+        setAdvancedOpen(false);
+        return;
+      }
     }
 
     setClientId("");
@@ -165,7 +219,8 @@ function InvoiceDraftDialog({
     setDueInDays("14");
     setNotes("");
     setLineItems([{ description: "", quantity: 1, unitAmount: 0 }]);
-  }, [draft, open]);
+    setAdvancedOpen(false);
+  }, [clients, contracts, draft, initialContractId, open]);
 
   function applyContract(nextContractId: string) {
     setContractId(nextContractId);
@@ -175,22 +230,34 @@ function InvoiceDraftDialog({
     if (!selectedContract) return;
 
     const selectedClient = clients.find((client) => client.id === selectedContract.clientId);
-    setClientId(selectedContract.clientId);
-    setTitle((current) => current || `${selectedClient?.businessName ?? "Client"} Monthly Services`);
-    setRecipientName((current) => current || selectedClient?.businessName || "");
-    setBillingCompany((current) => current || selectedClient?.businessName || "");
-    setPaymentTerms((current) => current || selectedContract.paymentTerms || "Net 14 days");
-    setLineItems((current) => {
-      const hasMeaningfulItems = current.some((item) => item.description.trim() || item.unitAmount > 0);
-      if (hasMeaningfulItems) return current;
-      return [
-        {
-          description: selectedContract.serviceDescription,
-          quantity: 1,
-          unitAmount: selectedContract.monthlyValue,
-        },
-      ];
-    });
+    const template = buildDraftTemplate(selectedContract, selectedClient);
+    if (!template) return;
+
+    setClientId(template.clientId);
+    setTitle(template.title);
+    setRecipientName(template.recipientName);
+    setBillingCompany(template.billingCompany);
+    setPaymentTerms(template.paymentTerms);
+    setDueInDays(template.dueInDays);
+    setLineItems(template.lineItems);
+  }
+
+  function resetToContractDefaults() {
+    if (contractId === "none") return;
+    const selectedContract = contracts.find((contract) => contract.id === contractId);
+    const selectedClient = selectedContract
+      ? clients.find((client) => client.id === selectedContract.clientId)
+      : undefined;
+    const template = buildDraftTemplate(selectedContract, selectedClient);
+    if (!template) return;
+
+    setClientId(template.clientId);
+    setTitle(template.title);
+    setRecipientName(template.recipientName);
+    setBillingCompany(template.billingCompany);
+    setPaymentTerms(template.paymentTerms);
+    setDueInDays(template.dueInDays);
+    setLineItems(template.lineItems);
   }
 
   function updateLineItem(index: number, patch: Partial<InvoiceLineItem>) {
@@ -237,6 +304,10 @@ function InvoiceDraftDialog({
   const availableContracts = clientId
     ? contracts.filter((contract) => contract.clientId === clientId)
     : contracts;
+  const selectedContract = contractId !== "none"
+    ? contracts.find((contract) => contract.id === contractId)
+    : undefined;
+  const selectedClient = clientId ? clients.find((client) => client.id === clientId) : undefined;
 
   const canSave =
     !!clientId &&
@@ -252,40 +323,84 @@ function InvoiceDraftDialog({
         </DialogHeader>
 
         <div className="space-y-6">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Client *</label>
-              <Select value={clientId} onValueChange={setClientId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a client" />
-                </SelectTrigger>
-                <SelectContent>
-                  {clients.map((client) => (
-                    <SelectItem key={client.id} value={client.id}>
-                      {client.businessName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <Card className="glass-card">
+            <CardContent className="space-y-5 p-5">
+              <div className="flex items-start justify-between gap-4">
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2 text-sm font-medium text-slate-900 dark:text-white">
+                    <Sparkles className="h-4 w-4 text-primary" />
+                    Start from Stripe-ready contract context
+                  </div>
+                  <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
+                    Choose a contract and we&apos;ll preload the invoice the same way Stripe expects it. You only need to edit the exceptions like billing entity, ABN, recipient, or notes.
+                  </p>
+                </div>
+                {selectedContract && (
+                  <Button variant="outline" size="sm" onClick={resetToContractDefaults}>
+                    Reset to Contract Defaults
+                  </Button>
+                )}
+              </div>
 
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Contract</label>
-              <Select value={contractId} onValueChange={applyContract}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Optional contract" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">No linked contract</SelectItem>
-                  {availableContracts.map((contract) => (
-                    <SelectItem key={contract.id} value={contract.id}>
-                      {formatAUD(contract.monthlyValue)} — {contract.serviceDescription.slice(0, 40)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium">Client *</label>
+                  <Select value={clientId} onValueChange={setClientId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a client" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {clients.map((client) => (
+                        <SelectItem key={client.id} value={client.id}>
+                          {client.businessName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium">Contract</label>
+                  <Select value={contractId} onValueChange={applyContract}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Optional contract" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No linked contract</SelectItem>
+                      {availableContracts.map((contract) => (
+                        <SelectItem key={contract.id} value={contract.id}>
+                          {formatAUD(contract.monthlyValue)} — {contract.serviceDescription.slice(0, 40)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {selectedContract && selectedClient && (
+                <div className="grid gap-4 rounded-[26px] border border-white/25 bg-white/18 p-4 backdrop-blur-xl md:grid-cols-3">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                      Client
+                    </p>
+                    <p className="mt-2 text-sm font-medium">{selectedClient.businessName}</p>
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                      Base line item
+                    </p>
+                    <p className="mt-2 text-sm font-medium">{selectedContract.serviceDescription}</p>
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                      Base amount
+                    </p>
+                    <p className="mt-2 text-sm font-medium">{formatAUD(selectedContract.monthlyValue)}</p>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-1.5">
@@ -324,67 +439,6 @@ function InvoiceDraftDialog({
             </div>
           </div>
 
-          <div className="space-y-3">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-medium">Line Items</p>
-                <p className="text-xs text-muted-foreground">Add as many billable items as you need.</p>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setLineItems((current) => [...current, { description: "", quantity: 1, unitAmount: 0 }])}
-              >
-                <Plus className="h-4 w-4 mr-1.5" />
-                Add Line
-              </Button>
-            </div>
-
-            <div className="space-y-3">
-              {lineItems.map((item, index) => (
-                <div key={index} className="grid gap-3 rounded-[24px] border border-white/25 bg-white/18 p-4 backdrop-blur-xl md:grid-cols-[1.7fr_0.45fr_0.7fr_auto]">
-                  <Input
-                    value={item.description}
-                    onChange={(e) => updateLineItem(index, { description: e.target.value })}
-                    placeholder="Line item description"
-                  />
-                  <Input
-                    type="number"
-                    min="1"
-                    value={String(item.quantity)}
-                    onChange={(e) => updateLineItem(index, { quantity: Number(e.target.value) || 1 })}
-                    placeholder="Qty"
-                  />
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={String(item.unitAmount)}
-                    onChange={(e) => updateLineItem(index, { unitAmount: Number(e.target.value) || 0 })}
-                    placeholder="Unit amount"
-                  />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() =>
-                      setLineItems((current) =>
-                        current.length > 1 ? current.filter((_, itemIndex) => itemIndex !== index) : current,
-                      )
-                    }
-                    disabled={lineItems.length === 1}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex items-center justify-between rounded-[24px] border border-white/25 bg-white/14 px-4 py-3 text-sm">
-              <span className="text-muted-foreground">Draft total</span>
-              <span className="font-semibold">{formatAUD(draftTotal(lineItems))}</span>
-            </div>
-          </div>
-
           <div className="space-y-1.5">
             <label className="text-sm font-medium">Invoice Notes / Footer</label>
             <Textarea
@@ -394,6 +448,92 @@ function InvoiceDraftDialog({
               placeholder="Extra billing notes, banking references, or footer text for Stripe invoices."
             />
           </div>
+
+          <div className="rounded-[24px] border border-white/20 bg-white/12 backdrop-blur-xl">
+            <button
+              type="button"
+              className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
+              onClick={() => setAdvancedOpen((current) => !current)}
+            >
+              <div>
+                <p className="text-sm font-medium">Advanced Stripe Overrides</p>
+                <p className="text-xs text-muted-foreground">
+                  Adjust line items only when you need to go beyond the default Stripe-style setup.
+                </p>
+              </div>
+              {advancedOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+            </button>
+
+            {advancedOpen && (
+              <div className="space-y-3 border-t border-white/10 px-4 pb-4 pt-2">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-medium">Line Items</p>
+                    <p className="text-xs text-muted-foreground">Add, remove, or rebalance billable items if the default needs adjusting.</p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setLineItems((current) => [...current, { description: "", quantity: 1, unitAmount: 0 }])}
+                  >
+                    <Plus className="h-4 w-4 mr-1.5" />
+                    Add Line
+                  </Button>
+                </div>
+
+                <div className="space-y-3">
+                  {lineItems.map((item, index) => (
+                    <div key={index} className="grid gap-3 rounded-[24px] border border-white/25 bg-white/18 p-4 backdrop-blur-xl md:grid-cols-[1.7fr_0.45fr_0.7fr_auto]">
+                      <Input
+                        value={item.description}
+                        onChange={(e) => updateLineItem(index, { description: e.target.value })}
+                        placeholder="Line item description"
+                      />
+                      <Input
+                        type="number"
+                        min="1"
+                        value={String(item.quantity)}
+                        onChange={(e) => updateLineItem(index, { quantity: Number(e.target.value) || 1 })}
+                        placeholder="Qty"
+                      />
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={String(item.unitAmount)}
+                        onChange={(e) => updateLineItem(index, { unitAmount: Number(e.target.value) || 0 })}
+                        placeholder="Unit amount"
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() =>
+                          setLineItems((current) =>
+                            current.length > 1 ? current.filter((_, itemIndex) => itemIndex !== index) : current,
+                          )
+                        }
+                        disabled={lineItems.length === 1}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex items-center justify-between rounded-[24px] border border-white/25 bg-white/14 px-4 py-3 text-sm">
+                  <span className="text-muted-foreground">Draft total</span>
+                  <span className="font-semibold">{formatAUD(draftTotal(lineItems))}</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {!advancedOpen && (
+            <div className="flex items-center justify-between rounded-[24px] border border-white/25 bg-white/14 px-4 py-3 text-sm">
+              <span className="text-muted-foreground">Current total</span>
+              <span className="font-semibold">{formatAUD(draftTotal(lineItems))}</span>
+            </div>
+          )}
 
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="outline" onClick={() => onOpenChange(false)}>
@@ -428,6 +568,7 @@ export default function Invoices() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingDraft, setEditingDraft] = useState<InvoiceDraft | null>(null);
+  const [initialContractId, setInitialContractId] = useState<string | null>(null);
 
   const { data: invoiceData, isLoading: invoicesLoading } = useQuery<{
     connected: boolean;
@@ -548,6 +689,14 @@ export default function Invoices() {
     return map;
   }, [clients]);
 
+  const quickStartContracts = useMemo(
+    () =>
+      (contracts ?? [])
+        .filter((contract) => contract.status === "active" || contract.status === "signed")
+        .slice(0, 4),
+    [contracts],
+  );
+
   return (
     <div className="flex-1 overflow-auto" data-testid="page-invoices">
       <header className="sticky top-0 z-10 glass-header px-6 py-4">
@@ -565,6 +714,7 @@ export default function Invoices() {
             size="sm"
             onClick={() => {
               setEditingDraft(null);
+              setInitialContractId(null);
               setDialogOpen(true);
             }}
             data-testid="button-create-invoice"
@@ -621,6 +771,53 @@ export default function Invoices() {
             </p>
           </Card>
         )}
+
+        <section className="space-y-4">
+          <div className="space-y-1">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground/70">
+              Quick Start
+            </p>
+            <h2 className="text-lg font-semibold tracking-[-0.03em] text-slate-900 dark:text-white">
+              Start from a contract, then only change what differs from Stripe defaults
+            </h2>
+          </div>
+
+          {quickStartContracts.length > 0 && (
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              {quickStartContracts.map((contract) => {
+                const client = clientMap[contract.clientId];
+                return (
+                  <Card key={contract.id} className="glass-card overflow-hidden">
+                    <CardContent className="space-y-3 p-4">
+                      <div>
+                        <p className="text-sm font-medium">{client?.businessName || "Client"}</p>
+                        <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                          {contract.serviceDescription}
+                        </p>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-semibold">{formatAUD(contract.monthlyValue)}</span>
+                        <Badge variant="outline">{contract.status}</Badge>
+                      </div>
+                      <Button
+                        className="w-full"
+                        size="sm"
+                        onClick={() => {
+                          setEditingDraft(null);
+                          setInitialContractId(contract.id);
+                          setDialogOpen(true);
+                        }}
+                      >
+                        <Sparkles className="h-4 w-4 mr-1.5" />
+                        Start from Contract
+                      </Button>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </section>
 
         <section className="space-y-4">
           <div className="space-y-1">
@@ -918,10 +1115,17 @@ export default function Invoices() {
 
       <InvoiceDraftDialog
         open={dialogOpen}
-        onOpenChange={setDialogOpen}
+        onOpenChange={(open) => {
+          setDialogOpen(open);
+          if (!open) {
+            setInitialContractId(null);
+            setEditingDraft(null);
+          }
+        }}
         clients={clients ?? []}
         contracts={contracts ?? []}
         draft={editingDraft}
+        initialContractId={initialContractId}
       />
     </div>
   );
