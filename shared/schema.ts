@@ -61,6 +61,9 @@ export const clients = pgTable("clients", {
   contractEnd: text("contract_end"),
   notes: text("notes"),
   assignedTeam: text("assigned_team").array(),
+  brandLogo: text("brand_logo"), // base64 data URI
+  brandColors: jsonb("brand_colors").$type<string[]>(), // extracted hex colors
+  brandTypography: jsonb("brand_typography").$type<string[]>(), // detected font families
   createdAt: timestamp("created_at").defaultNow(),
 });
 

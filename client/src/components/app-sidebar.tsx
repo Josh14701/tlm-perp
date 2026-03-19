@@ -11,6 +11,7 @@ import {
   CheckSquare,
   UserCog,
   FileText,
+  Receipt,
   Settings,
 } from "lucide-react";
 import {
@@ -45,6 +46,7 @@ const opsNav = [
   { label: "Tasks", href: "/tasks", icon: CheckSquare },
   { label: "Team", href: "/team", icon: UserCog },
   { label: "Contracts", href: "/contracts", icon: FileText },
+  { label: "Invoices", href: "/invoices", icon: Receipt },
 ];
 
 function TLMLogo() {

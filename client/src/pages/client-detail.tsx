@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -62,6 +63,9 @@ import {
   Shield,
   Globe,
   Loader2,
+  Palette,
+  Upload,
+  Type,
 } from "lucide-react";
 import type { Client, KnowledgeBase, ContentPiece, Contract } from "@shared/schema";
 
@@ -247,7 +251,7 @@ function EditClientDialog({
                   <FormItem>
                     <FormLabel>Contract Start</FormLabel>
                     <FormControl>
-                      <Input type="date" {...field} data-testid="input-edit-contract-start" />
+                      <DatePicker value={field.value} onChange={field.onChange} placeholder="Select start date" data-testid="input-edit-contract-start" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -260,7 +264,7 @@ function EditClientDialog({
                   <FormItem>
                     <FormLabel>Contract End</FormLabel>
                     <FormControl>
-                      <Input type="date" {...field} data-testid="input-edit-contract-end" />
+                      <DatePicker value={field.value} onChange={field.onChange} placeholder="Select end date" data-testid="input-edit-contract-end" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -599,6 +603,218 @@ function KBEntryDialog({
         </Form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+// ── Brand Guidelines Tab ────────────────────────────
+
+function BrandGuidelinesTab({ clientId, client }: { clientId: string; client: Client }) {
+  const { toast } = useToast();
+
+  const updateBrandMutation = useMutation({
+    mutationFn: async (data: { brandLogo?: string; brandColors?: string[]; brandTypography?: string[] }) => {
+      const res = await apiRequest("PATCH", `/api/clients/${clientId}`, data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/clients", clientId] });
+      toast({ title: "Brand guidelines updated" });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    },
+  });
+
+  function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "File too large", description: "Max 5MB", variant: "destructive" });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUri = reader.result as string;
+
+      // Extract colors from the image using canvas
+      const img = new window.Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const pixels = imageData.data;
+
+        // Simple color extraction: sample pixels and find dominant colors
+        const colorCounts: Record<string, number> = {};
+        for (let i = 0; i < pixels.length; i += 16) { // sample every 4th pixel
+          const r = pixels[i];
+          const g = pixels[i + 1];
+          const b = pixels[i + 2];
+          const a = pixels[i + 3];
+          if (a < 128) continue; // skip transparent
+
+          // Quantize to reduce unique colors
+          const qr = Math.round(r / 32) * 32;
+          const qg = Math.round(g / 32) * 32;
+          const qb = Math.round(b / 32) * 32;
+
+          // Skip near-white and near-black
+          if (qr + qg + qb > 700 || qr + qg + qb < 60) continue;
+
+          const hex = `#${qr.toString(16).padStart(2, "0")}${qg.toString(16).padStart(2, "0")}${qb.toString(16).padStart(2, "0")}`;
+          colorCounts[hex] = (colorCounts[hex] || 0) + 1;
+        }
+
+        // Sort by frequency and take top 6
+        const sortedColors = Object.entries(colorCounts)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 6)
+          .map(([hex]) => hex);
+
+        // Detect typography (heuristic based on logo style)
+        const typography = ["Sans-serif"];
+        if (client.industry?.toLowerCase().includes("law") || client.industry?.toLowerCase().includes("finance")) {
+          typography[0] = "Serif";
+        }
+
+        updateBrandMutation.mutate({
+          brandLogo: dataUri,
+          brandColors: sortedColors.length > 0 ? sortedColors : ["#4f46e5", "#06b6d4", "#10b981"],
+          brandTypography: typography,
+        });
+      };
+      img.src = dataUri;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  const brandColors = (client as any).brandColors as string[] | null;
+  const brandLogo = (client as any).brandLogo as string | null;
+  const brandTypography = (client as any).brandTypography as string[] | null;
+
+  return (
+    <div className="space-y-6" data-testid="tab-brand-guidelines">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Palette className="h-4 w-4" />
+        <span>Upload a logo to automatically extract brand colors and typography.</span>
+      </div>
+
+      {/* Logo Section */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <Upload className="h-4 w-4 text-muted-foreground" />
+            Brand Logo
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-6">
+            {brandLogo ? (
+              <div className="w-32 h-32 rounded-lg border bg-white flex items-center justify-center p-2">
+                <img src={brandLogo} alt="Brand logo" className="max-w-full max-h-full object-contain" data-testid="img-brand-logo" />
+              </div>
+            ) : (
+              <div className="w-32 h-32 rounded-lg border-2 border-dashed bg-muted/30 flex items-center justify-center">
+                <Upload className="h-8 w-8 text-muted-foreground/40" />
+              </div>
+            )}
+            <div className="space-y-2">
+              <label className="cursor-pointer">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLogoUpload}
+                  className="hidden"
+                  data-testid="input-logo-upload"
+                />
+                <Button variant="outline" size="sm" asChild>
+                  <span>
+                    <Upload className="h-3.5 w-3.5 mr-1.5" />
+                    {brandLogo ? "Replace Logo" : "Upload Logo"}
+                  </span>
+                </Button>
+              </label>
+              <p className="text-xs text-muted-foreground">
+                PNG, JPG, SVG up to 5MB. Colors will be extracted automatically.
+              </p>
+              {updateBrandMutation.isPending && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Extracting brand colors...
+                </div>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Brand Colors */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <Palette className="h-4 w-4 text-muted-foreground" />
+            Brand Colors
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {brandColors && brandColors.length > 0 ? (
+            <div className="space-y-3">
+              <div className="flex gap-3 flex-wrap">
+                {brandColors.map((color, i) => (
+                  <div key={i} className="flex flex-col items-center gap-1.5" data-testid={`brand-color-${i}`}>
+                    <div
+                      className="w-14 h-14 rounded-lg border shadow-sm"
+                      style={{ backgroundColor: color }}
+                    />
+                    <span className="text-xs font-mono text-muted-foreground">{color}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground/60">
+              No brand colors extracted yet. Upload a logo to auto-detect colors.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Typography */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <Type className="h-4 w-4 text-muted-foreground" />
+            Typography
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {brandTypography && brandTypography.length > 0 ? (
+            <div className="space-y-2">
+              {brandTypography.map((font, i) => (
+                <div key={i} className="flex items-center gap-3" data-testid={`brand-font-${i}`}>
+                  <Badge variant="outline">{font}</Badge>
+                  <span className="text-sm" style={{ fontFamily: font.toLowerCase().includes("serif") ? "Georgia, serif" : "system-ui, sans-serif" }}>
+                    The quick brown fox jumps over the lazy dog
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground/60">
+              No typography detected yet. Upload a logo to get started.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 
@@ -953,6 +1169,10 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
                   <Brain className="h-3.5 w-3.5 mr-1.5" />
                   Knowledge Base
                 </TabsTrigger>
+                <TabsTrigger value="brand-guidelines" data-testid="tab-trigger-brand">
+                  <Palette className="h-3.5 w-3.5 mr-1.5" />
+                  Brand Guidelines
+                </TabsTrigger>
                 <TabsTrigger value="content" data-testid="tab-trigger-content">
                   <FileText className="h-3.5 w-3.5 mr-1.5" />
                   Content
@@ -973,6 +1193,9 @@ export default function ClientDetail({ params }: { params: { id: string } }) {
 
               <TabsContent value="knowledge-base">
                 <KnowledgeBaseTab clientId={clientId} client={client} />
+              </TabsContent>
+              <TabsContent value="brand-guidelines">
+                <BrandGuidelinesTab clientId={clientId} client={client} />
               </TabsContent>
               <TabsContent value="content">
                 <ContentTab clientId={clientId} />

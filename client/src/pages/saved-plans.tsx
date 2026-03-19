@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
@@ -32,8 +33,11 @@ import {
   CheckCircle2,
   Archive,
   PenLine,
+  Plus,
+  Link,
+  ExternalLink,
 } from "lucide-react";
-import type { ContentPlan, Client } from "@shared/schema";
+import type { ContentPlan, Client, ShareLink } from "@shared/schema";
 
 // ── Status Styles ──────────────────────────────────
 
@@ -262,6 +266,30 @@ function PlanDetailDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const { toast } = useToast();
+  const [shareLink, setShareLink] = useState<string | null>(null);
+
+  const shareMutation = useMutation({
+    mutationFn: async () => {
+      if (!plan) return;
+      const res = await apiRequest("POST", "/api/share", {
+        type: "plan",
+        resourceId: plan.id,
+        clientId: plan.clientId,
+      });
+      return res.json() as Promise<ShareLink>;
+    },
+    onSuccess: (data) => {
+      if (data) {
+        const link = `${window.location.origin}/#/public/${data.token}`;
+        setShareLink(link);
+        navigator.clipboard.writeText(link);
+        toast({ title: "Share link copied!", description: "Link copied to clipboard." });
+      }
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    },
+  });
 
   const duplicateMutation = useMutation({
     mutationFn: async () => {
@@ -457,6 +485,16 @@ function PlanDetailDialog({
             Export
           </Button>
           <Button
+            variant="outline"
+            size="sm"
+            onClick={() => shareMutation.mutate()}
+            disabled={shareMutation.isPending}
+            data-testid="button-share-plan"
+          >
+            <ExternalLink className="h-4 w-4 mr-1.5" />
+            {shareMutation.isPending ? "Generating..." : "Share with Client"}
+          </Button>
+          <Button
             variant="destructive"
             size="sm"
             onClick={() => deleteMutation.mutate()}
@@ -466,6 +504,156 @@ function PlanDetailDialog({
             <Trash2 className="h-4 w-4 mr-1.5" />
             {deleteMutation.isPending ? "Deleting..." : "Delete"}
           </Button>
+        </div>
+
+        {shareLink && (
+          <div className="rounded-lg border bg-muted/30 p-3 space-y-1.5">
+            <p className="text-xs font-medium">Client Share Link</p>
+            <div className="flex items-center gap-2">
+              <Input readOnly value={shareLink} className="text-xs font-mono" />
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => { navigator.clipboard.writeText(shareLink); toast({ title: "Copied!" }); }}
+              >
+                <Copy className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ── Create Plan Dialog ──────────────────────────────
+
+function CreatePlanDialog({
+  open,
+  onOpenChange,
+  clients,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  clients: Client[];
+}) {
+  const { toast } = useToast();
+  const [title, setTitle] = useState("");
+  const [clientId, setClientId] = useState("");
+  const [description, setDescription] = useState("");
+  const [rawContent, setRawContent] = useState("");
+
+  const createMutation = useMutation({
+    mutationFn: async () => {
+      // Parse raw content into structured ideas
+      const lines = rawContent.split("\n").filter((l) => l.trim());
+      const ideas: Array<{ title: string; type: string; concept: string; platform: string }> = [];
+
+      for (const line of lines) {
+        const trimmed = line.replace(/^[\d\-\*\.\)\s]+/, "").trim();
+        if (!trimmed) continue;
+        ideas.push({
+          title: trimmed.slice(0, 100),
+          type: "text_post",
+          concept: trimmed,
+          platform: "instagram",
+        });
+      }
+
+      const res = await apiRequest("POST", "/api/content-plans", {
+        clientId,
+        title,
+        description,
+        ideas,
+        status: "draft",
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/content-plans"] });
+      onOpenChange(false);
+      setTitle("");
+      setClientId("");
+      setDescription("");
+      setRawContent("");
+      toast({ title: "Plan created", description: "Your new plan has been saved." });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    },
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" data-testid="dialog-create-plan">
+        <DialogHeader>
+          <DialogTitle>Create New Plan</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div>
+            <label className="text-sm font-medium mb-1.5 block">Title *</label>
+            <Input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="e.g. March Content Calendar"
+              data-testid="input-plan-title"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium mb-1.5 block">Client *</label>
+            <Select value={clientId} onValueChange={setClientId}>
+              <SelectTrigger data-testid="select-plan-client">
+                <SelectValue placeholder="Select a client" />
+              </SelectTrigger>
+              <SelectContent>
+                {clients.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.businessName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <label className="text-sm font-medium mb-1.5 block">Description</label>
+            <Input
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Brief description of this plan"
+              data-testid="input-plan-description"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium mb-1.5 block">Content / Scripts</label>
+            <p className="text-xs text-muted-foreground mb-2">
+              Paste in your scripts, content ideas, or any text. Each line becomes a separate idea.
+            </p>
+            <Textarea
+              value={rawContent}
+              onChange={(e) => setRawContent(e.target.value)}
+              placeholder={"Post 1: Behind the scenes at the studio\nPost 2: Client testimonial video\nPost 3: Tips for social media growth\n..."}
+              rows={10}
+              className="font-mono text-sm"
+              data-testid="textarea-plan-content"
+            />
+            {rawContent.trim() && (
+              <p className="text-xs text-muted-foreground mt-1">
+                {rawContent.split("\n").filter((l) => l.trim()).length} items detected
+              </p>
+            )}
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => createMutation.mutate()}
+              disabled={!title.trim() || !clientId || createMutation.isPending}
+              data-testid="button-create-plan"
+            >
+              {createMutation.isPending ? "Creating..." : "Create Plan"}
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
@@ -480,6 +668,7 @@ export default function SavedPlans() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedPlan, setSelectedPlan] = useState<ContentPlan | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
 
   const { data: plans, isLoading: plansLoading } = useQuery<ContentPlan[]>({
     queryKey: ["/api/content-plans"],
@@ -521,6 +710,12 @@ export default function SavedPlans() {
         <h1 className="text-lg font-semibold" data-testid="page-title">
           Saved Plans
         </h1>
+        <div className="ml-auto">
+          <Button size="sm" onClick={() => setCreateOpen(true)} data-testid="button-new-plan">
+            <Plus className="h-4 w-4 mr-1.5" />
+            New Plan
+          </Button>
+        </div>
       </header>
 
       <div className="p-6 space-y-6">
@@ -629,6 +824,12 @@ export default function SavedPlans() {
         }
         open={detailOpen}
         onOpenChange={setDetailOpen}
+      />
+
+      <CreatePlanDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        clients={clients ?? []}
       />
     </div>
   );

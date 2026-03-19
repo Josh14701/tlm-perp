@@ -808,7 +808,7 @@ asyncio.run(main())
             size: dalleSize,
             quality: "standard",
           });
-          imageUrl = response.data[0]?.url ?? "";
+          imageUrl = response.data?.[0]?.url ?? "";
         } catch (imgErr: any) {
           console.error("OpenAI image generation error:", imgErr.message);
           imageUrl = "error";

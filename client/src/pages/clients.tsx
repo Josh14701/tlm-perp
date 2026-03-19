@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
@@ -219,7 +220,7 @@ function AddClientDialog({
                   <FormItem>
                     <FormLabel>Contract Start</FormLabel>
                     <FormControl>
-                      <Input type="date" {...field} data-testid="input-contract-start" />
+                      <DatePicker value={field.value} onChange={field.onChange} placeholder="Select start date" data-testid="input-contract-start" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -233,7 +234,7 @@ function AddClientDialog({
                   <FormItem>
                     <FormLabel>Contract End</FormLabel>
                     <FormControl>
-                      <Input type="date" {...field} data-testid="input-contract-end" />
+                      <DatePicker value={field.value} onChange={field.onChange} placeholder="Select end date" data-testid="input-contract-end" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

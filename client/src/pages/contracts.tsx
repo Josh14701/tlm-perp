@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -267,7 +269,7 @@ function CreateContractDialog({
                   <FormItem>
                     <FormLabel>Start Date *</FormLabel>
                     <FormControl>
-                      <Input type="date" {...field} data-testid="input-start-date" />
+                      <DatePicker value={field.value} onChange={field.onChange} placeholder="Select start date" data-testid="input-start-date" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -281,7 +283,7 @@ function CreateContractDialog({
                   <FormItem>
                     <FormLabel>End Date</FormLabel>
                     <FormControl>
-                      <Input type="date" {...field} data-testid="input-end-date" />
+                      <DatePicker value={field.value} onChange={field.onChange} placeholder="Select end date" data-testid="input-end-date" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -964,11 +966,10 @@ function ContractsTableSkeleton() {
 // ── Main Page ────────────────────────────────────────
 
 export default function Contracts() {
+  const [, navigate] = useLocation();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [createOpen, setCreateOpen] = useState(false);
-  const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
-  const [detailOpen, setDetailOpen] = useState(false);
 
   const { data: contracts, isLoading: contractsLoading } = useQuery<Contract[]>({
     queryKey: ["/api/contracts"],
@@ -1005,8 +1006,7 @@ export default function Contracts() {
   });
 
   function handleRowClick(contract: Contract) {
-    setSelectedContract(contract);
-    setDetailOpen(true);
+    navigate(`/contracts/${contract.id}`);
   }
 
   // Summary stats
@@ -1212,12 +1212,6 @@ export default function Contracts() {
         open={createOpen}
         onOpenChange={setCreateOpen}
         clients={clients ?? []}
-      />
-      <ContractDetailDialog
-        open={detailOpen}
-        onOpenChange={setDetailOpen}
-        contract={selectedContract}
-        clientName={selectedContract ? (clientMap[selectedContract.clientId] || "Unknown") : ""}
       />
     </div>
   );

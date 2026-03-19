@@ -1,8 +1,24 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { formatDistanceToNow, parse, format } from "date-fns";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -31,8 +47,12 @@ import {
   MessageSquare,
   Zap,
   BarChart3,
+  Pencil,
+  Plus,
+  Trash2,
 } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Client, ActivityLog, RevenueGoal } from "@shared/schema";
 
 // ── Types ──────────────────────────────────────────────
@@ -192,11 +212,161 @@ function ActivitySkeleton() {
   );
 }
 
+// ── Revenue Goal Dialog ────────────────────────────────
+function RevenueGoalDialog({
+  open,
+  onOpenChange,
+  editingGoal,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  editingGoal: RevenueGoal | null;
+}) {
+  const isEditing = !!editingGoal;
+  const [type, setType] = useState(editingGoal?.type ?? "monthly");
+  const [target, setTarget] = useState(editingGoal?.target?.toString() ?? "");
+  const [period, setPeriod] = useState(editingGoal?.period ?? "");
+
+  // Reset form when editingGoal changes
+  useState(() => {
+    setType(editingGoal?.type ?? "monthly");
+    setTarget(editingGoal?.target?.toString() ?? "");
+    setPeriod(editingGoal?.period ?? "");
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/revenue-goals", {
+        type,
+        target: parseFloat(target),
+        period,
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+      onOpenChange(false);
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("PATCH", `/api/revenue-goals/${editingGoal!.id}`, {
+        type,
+        target: parseFloat(target),
+        period,
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+      onOpenChange(false);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("DELETE", `/api/revenue-goals/${editingGoal!.id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+      onOpenChange(false);
+    },
+  });
+
+  const isPending = createMutation.isPending || updateMutation.isPending;
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (isEditing) {
+      updateMutation.mutate();
+    } else {
+      createMutation.mutate();
+    }
+  }
+
+  // Generate current period default
+  const now = new Date();
+  const defaultPeriod = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>{isEditing ? "Edit Revenue Goal" : "Add Revenue Goal"}</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="text-sm font-medium mb-1.5 block">Type</label>
+            <Select value={type} onValueChange={setType}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="monthly">Monthly</SelectItem>
+                <SelectItem value="quarterly">Quarterly</SelectItem>
+                <SelectItem value="yearly">Yearly</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <label className="text-sm font-medium mb-1.5 block">Target (AUD)</label>
+            <Input
+              type="number"
+              min={0}
+              value={target}
+              onChange={(e) => setTarget(e.target.value)}
+              placeholder="e.g. 50000"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium mb-1.5 block">Period</label>
+            <Input
+              value={period || defaultPeriod}
+              onChange={(e) => setPeriod(e.target.value)}
+              placeholder="e.g. 2026-03, 2026-Q1, 2026"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Format: YYYY-MM (monthly), YYYY-Q1 (quarterly), YYYY (yearly)
+            </p>
+          </div>
+          <div className="flex justify-between pt-2">
+            <div>
+              {isEditing && (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => deleteMutation.mutate()}
+                  disabled={deleteMutation.isPending}
+                >
+                  <Trash2 className="h-3.5 w-3.5 mr-1" />
+                  Delete
+                </Button>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isPending || !target || !period}>
+                {isPending ? "Saving..." : isEditing ? "Save" : "Create"}
+              </Button>
+            </div>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ── Main Dashboard ─────────────────────────────────────
 export default function Dashboard() {
   const { data, isLoading } = useQuery<DashboardData>({
     queryKey: ["/api/dashboard"],
   });
+  const [goalDialogOpen, setGoalDialogOpen] = useState(false);
+  const [editingGoal, setEditingGoal] = useState<RevenueGoal | null>(null);
 
   const taskTotal = data?.taskCompletionStats.total ?? 0;
   const taskComplete = data?.taskCompletionStats.complete ?? 0;
@@ -328,10 +498,32 @@ export default function Dashboard() {
           {/* Revenue Goal Tracker */}
           <Card data-testid="card-revenue-goal">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Target className="h-4 w-4 text-muted-foreground" />
-                Revenue Goal
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <Target className="h-4 w-4 text-muted-foreground" />
+                  Revenue Goal
+                </CardTitle>
+                <div className="flex gap-1">
+                  {monthlyGoal && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={() => { setEditingGoal(monthlyGoal); setGoalDialogOpen(true); }}
+                    >
+                      <Pencil className="h-3 w-3" />
+                    </Button>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={() => { setEditingGoal(null); setGoalDialogOpen(true); }}
+                  >
+                    <Plus className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               {isLoading ? (
@@ -648,6 +840,12 @@ export default function Dashboard() {
           </Card>
         </div>
       </div>
+
+      <RevenueGoalDialog
+        open={goalDialogOpen}
+        onOpenChange={(v) => { setGoalDialogOpen(v); if (!v) setEditingGoal(null); }}
+        editingGoal={editingGoal}
+      />
     </div>
   );
 }

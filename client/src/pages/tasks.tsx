@@ -26,6 +26,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -578,11 +579,7 @@ function TaskFormDialog({
                   <FormItem>
                     <FormLabel>Due Date</FormLabel>
                     <FormControl>
-                      <Input
-                        type="date"
-                        {...field}
-                        data-testid="input-task-due-date"
-                      />
+                      <DatePicker value={field.value ?? ""} onChange={field.onChange} placeholder="Select due date" data-testid="input-task-due-date" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

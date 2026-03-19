@@ -23,6 +23,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -444,7 +445,7 @@ function ContentDialog({
                   <FormItem>
                     <FormLabel>Scheduled Date</FormLabel>
                     <FormControl>
-                      <Input type="date" {...field} data-testid="input-scheduled-date" />
+                      <DatePicker value={field.value ?? ""} onChange={field.onChange} placeholder="Select date" data-testid="input-scheduled-date" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
