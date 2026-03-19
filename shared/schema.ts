@@ -53,6 +53,7 @@ export type AgencySettings = typeof agencySettings.$inferSelect;
 export const clients = pgTable("clients", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   businessName: text("business_name").notNull(),
+  isPersonal: boolean("is_personal").notNull().default(false),
   industry: text("industry"),
   website: text("website"),
   mrr: real("mrr").default(0),

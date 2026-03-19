@@ -148,23 +148,25 @@ export async function registerRoutes(
         storage.listActivityLog(10),
       ]);
 
-      const totalMRR = clients
+      const billableClients = clients.filter((client) => !client.isPersonal);
+
+      const totalMRR = billableClients
         .filter(c => c.status === "active")
         .reduce((sum, c) => sum + (c.mrr ?? 0), 0);
 
       const clientCounts = {
-        active: clients.filter(c => c.status === "active").length,
-        onboarding: clients.filter(c => c.status === "onboarding").length,
-        paused: clients.filter(c => c.status === "paused").length,
-        churned: clients.filter(c => c.status === "churned").length,
-        total: clients.length,
+        active: billableClients.filter(c => c.status === "active").length,
+        onboarding: billableClients.filter(c => c.status === "onboarding").length,
+        paused: billableClients.filter(c => c.status === "paused").length,
+        churned: billableClients.filter(c => c.status === "churned").length,
+        total: billableClients.length,
       };
 
       const pipelineValue = leads
         .filter(l => !["won", "lost"].includes(l.stage))
         .reduce((sum, l) => sum + (l.proposalValue ?? 0), 0);
 
-      const topClientsByMRR = clients
+      const topClientsByMRR = billableClients
         .filter(c => c.status === "active")
         .sort((a, b) => (b.mrr ?? 0) - (a.mrr ?? 0))
         .slice(0, 5);

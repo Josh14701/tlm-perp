@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -36,7 +37,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Search, Building2, Globe, Calendar, Users, ArrowUpRight } from "lucide-react";
+import { Plus, Search, Building2, Globe, Calendar } from "lucide-react";
 import type { Client } from "@shared/schema";
 
 // ── Helpers ─────────────────────────────────────────
@@ -73,6 +74,7 @@ function statusLabel(status: string): string {
 
 const clientFormSchema = z.object({
   businessName: z.string().min(1, "Business name is required"),
+  isPersonal: z.boolean().default(false),
   industry: z.string().optional(),
   website: z.string().optional(),
   mrr: z.coerce.number().min(0).optional(),
@@ -99,6 +101,7 @@ function AddClientDialog({
     resolver: zodResolver(clientFormSchema),
     defaultValues: {
       businessName: "",
+      isPersonal: false,
       industry: "",
       website: "",
       mrr: 0,
@@ -146,6 +149,31 @@ function AddClientDialog({
                   <FormControl>
                     <Input placeholder="Acme Corp" {...field} data-testid="input-business-name" />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="isPersonal"
+              render={({ field }) => (
+                <FormItem className="rounded-xl border border-dashed p-4">
+                  <div className="flex items-start gap-3">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={(checked) => field.onChange(checked === true)}
+                        data-testid="checkbox-personal-client"
+                      />
+                    </FormControl>
+                    <div className="space-y-1">
+                      <FormLabel className="text-sm font-medium leading-none">Personal client</FormLabel>
+                      <p className="text-sm text-muted-foreground">
+                        Personal clients stay in your workspace, but they are excluded from charging and active client totals.
+                      </p>
+                    </div>
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
@@ -308,6 +336,14 @@ function ClientCard({ client }: { client: Client }) {
               {statusLabel(client.status)}
             </Badge>
           </div>
+          {client.isPersonal && (
+            <Badge
+              className="mt-2 rounded-full border-slate-300/70 bg-slate-100 text-[11px] text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+              variant="outline"
+            >
+              Personal client
+            </Badge>
+          )}
         </CardHeader>
         <CardContent className="space-y-2.5">
           {client.industry && (
@@ -388,8 +424,8 @@ export default function Clients() {
   });
 
   // Quick stats
-  const totalMRR = (clients ?? []).reduce((sum, c) => sum + (c.mrr ?? 0), 0);
-  const activeCount = (clients ?? []).filter(c => c.status === "active").length;
+  const billableClients = (clients ?? []).filter((client) => !client.isPersonal);
+  const totalMRR = billableClients.reduce((sum, c) => sum + (c.mrr ?? 0), 0);
 
   return (
     <div className="flex-1 overflow-auto" data-testid="page-clients">
@@ -400,7 +436,7 @@ export default function Clients() {
           <div className="flex-1">
             <h1 className="text-xl font-bold tracking-tight" data-testid="page-title">Clients</h1>
             <p className="text-sm text-muted-foreground">
-              {isLoading ? "Loading..." : `${clients?.length ?? 0} clients \u00b7 ${formatAUD(totalMRR)} total MRR`}
+              {isLoading ? "Loading..." : `${clients?.length ?? 0} clients \u00b7 ${billableClients.length} billable \u00b7 ${formatAUD(totalMRR)} total MRR`}
             </p>
           </div>
           <Button onClick={() => setDialogOpen(true)} size="sm" className="shadow-sm" data-testid="button-add-client">
