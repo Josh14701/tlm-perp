@@ -54,6 +54,17 @@ function normalizeTypography(value: unknown): string[] {
   return Array.from(new Set(cleaned)).slice(0, 4);
 }
 
+function mapAspectRatio(size?: string): string {
+  switch (size) {
+    case "1024x1792":
+      return "9:16";
+    case "1792x1024":
+      return "16:9";
+    default:
+      return "1:1";
+  }
+}
+
 function truncateText(value: string, limit = 220): string {
   if (value.length <= limit) return value;
   return `${value.slice(0, limit).trim()}...`;
@@ -1290,38 +1301,63 @@ Additional style notes: ${styleNotes || "None provided."}`;
       const isNanoBanana = ["nano_banana_2", "nano_banana_pro"].includes(usedModel);
 
       if (isNanoBanana) {
-        // Route NanoBanana models through the Python pplx SDK helper
-        // Uses file-based I/O to avoid execSync buffer limits on large base64 images
+        // NanoBanana now routes through Google's official Gemini image models.
+        // This replaces the old Python helper path that depended on an unavailable SDK.
+        if (!GOOGLE_AI_API_KEY) {
+          return res.status(503).json({
+            message: "Google AI API key not configured for NanoBanana image generation",
+          });
+        }
+
         try {
-          const { execSync } = await import("child_process");
-          const fs = await import("fs");
-          const path = await import("path");
-          const tmpFile = path.join(process.cwd(), `nb_img_${Date.now()}.png`);
-          const escapedPrompt = fullPrompt.replace(/\\/g, "\\\\").replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, " ");
-          execSync(
-            `python3 -c "
-import asyncio, sys
-sys.path.insert(0, '.')
-from generate_image import generate_image
-async def main():
-    img = await generate_image('${escapedPrompt}', model='${usedModel}')
-    with open('${tmpFile}', 'wb') as f:
-        f.write(img)
-asyncio.run(main())
-"`,
-            { timeout: 120000, cwd: process.cwd(), maxBuffer: 1024 * 1024 * 50 }
+          const googleModel =
+            usedModel === "nano_banana_pro"
+              ? "gemini-3-pro-image-preview"
+              : "gemini-3.1-flash-image-preview";
+
+          const response = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${googleModel}:generateContent`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "x-goog-api-key": GOOGLE_AI_API_KEY,
+              },
+              body: JSON.stringify({
+                contents: [
+                  {
+                    parts: [{ text: fullPrompt }],
+                  },
+                ],
+                generationConfig: {
+                  responseModalities: ["IMAGE"],
+                  imageConfig: {
+                    aspectRatio: mapAspectRatio(size),
+                    ...(usedModel === "nano_banana_pro" ? { imageSize: "2K" } : {}),
+                  },
+                },
+              }),
+            },
           );
-          if (fs.existsSync(tmpFile)) {
-            const imgBuffer = fs.readFileSync(tmpFile);
-            const b64 = imgBuffer.toString("base64");
-            imageUrl = `data:image/png;base64,${b64}`;
-            fs.unlinkSync(tmpFile);
-          } else {
-            imageUrl = "error";
+
+          const json = await response.json() as any;
+          if (!response.ok) {
+            throw new Error(json?.error?.message || "Gemini image generation failed");
           }
+
+          const base64Data =
+            json?.candidates?.[0]?.content?.parts?.find((part: any) => part.inlineData?.data)?.inlineData?.data;
+
+          if (!base64Data) {
+            throw new Error("Gemini returned no image data");
+          }
+
+          imageUrl = `data:image/png;base64,${base64Data}`;
         } catch (nbErr: any) {
           console.error(`NanoBanana (${usedModel}) generation error:`, nbErr.message);
-          imageUrl = "error";
+          return res.status(502).json({
+            message: nbErr.message || "NanoBanana image generation failed",
+          });
         }
       } else if (OPENAI_API_KEY) {
         // Route DALL-E models through the OpenAI SDK
