@@ -17,7 +17,7 @@ import {
   Check,
 } from "lucide-react";
 import type { Client, InvoiceDraft } from "@shared/schema";
-import thirdlinkLogo from "@/assets/thirdlink-logo.svg";
+import tlmLogo from "@/assets/tlm-logo.png";
 
 /* ─── Types ───────────────────────────────────────── */
 
@@ -445,8 +445,8 @@ export default function InvoiceDetail({ params }: { params: { id: string } }) {
                 </h1>
               </div>
               <img
-                src={thirdlinkLogo}
-                alt="ThirdLink Media"
+                src={tlmLogo}
+                alt="TLM"
                 className="h-14 w-auto"
               />
             </div>
