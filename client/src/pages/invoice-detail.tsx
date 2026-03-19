@@ -17,6 +17,7 @@ import {
   Check,
 } from "lucide-react";
 import type { Client, InvoiceDraft } from "@shared/schema";
+import thirdlinkLogo from "@/assets/thirdlink-logo.svg";
 
 /* ─── Types ───────────────────────────────────────── */
 
@@ -436,42 +437,47 @@ export default function InvoiceDetail({ params }: { params: { id: string } }) {
             {/* ════════════════════════════════════════════════
                 HEADER: Invoice title + Number + Status
                ════════════════════════════════════════════════ */}
-            <div className="flex justify-between items-start mb-8">
+            {/* Row 1: Invoice title + Logo */}
+            <div className="flex justify-between items-start mb-6">
               <div>
                 <h1 className="text-3xl font-bold tracking-tight text-slate-900">
                   Invoice
                 </h1>
               </div>
-              <div className="text-right space-y-1">
+              <img
+                src={thirdlinkLogo}
+                alt="ThirdLink Media"
+                className="h-14 w-auto"
+              />
+            </div>
+
+            {/* Row 2: Invoice meta */}
+            <div className="flex items-start gap-6 mb-8 text-sm">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400 mb-0.5">
+                  Invoice number
+                </p>
                 {editing ? (
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400 block">Invoice number</label>
-                    <Input
-                      value={invoiceNumber}
-                      onChange={(e) => setInvoiceNumber(e.target.value)}
-                      className="bg-amber-50/80 border-amber-200/60 h-auto py-1 px-2 text-right text-sm font-mono text-slate-900 w-48"
-                      placeholder="INV-001"
-                    />
-                  </div>
+                  <Input
+                    value={invoiceNumber}
+                    onChange={(e) => setInvoiceNumber(e.target.value)}
+                    className="bg-amber-50/80 border-amber-200/60 h-auto py-1 px-2 text-sm font-mono text-slate-900 w-48"
+                    placeholder="INV-001"
+                  />
                 ) : (
-                  <>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400">
-                      Invoice number
-                    </p>
-                    <p className="text-sm font-mono font-medium text-slate-700">
-                      {invoiceNumber}
-                    </p>
-                  </>
-                )}
-                {status && (
-                  <Badge
-                    variant="outline"
-                    className={`mt-1 ${STATUS_COLORS[status] ?? ""} print:border-slate-300 print:bg-transparent print:text-slate-700`}
-                  >
-                    {status.toUpperCase()}
-                  </Badge>
+                  <p className="font-mono font-medium text-slate-700">
+                    {invoiceNumber}
+                  </p>
                 )}
               </div>
+              {status && (
+                <Badge
+                  variant="outline"
+                  className={`mt-4 ${STATUS_COLORS[status] ?? ""} print:border-slate-300 print:bg-transparent print:text-slate-700`}
+                >
+                  {status.toUpperCase()}
+                </Badge>
+              )}
             </div>
 
             {/* ════════════════════════════════════════════════

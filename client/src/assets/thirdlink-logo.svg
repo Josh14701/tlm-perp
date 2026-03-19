@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 120" fill="none">
+  <!-- TL Icon -->
+  <!-- Back black L (left) -->
+  <path d="M0 10 L0 110 L35 110 L35 45 L70 45 L70 10 Z" fill="#1a1a1a"/>
+  <!-- Red top-left block -->
+  <path d="M15 0 L15 35 L50 35 L50 70 L85 70 L85 35 L50 35 L50 0 Z" fill="#E53935"/>
+  <path d="M15 0 L50 0 L50 35 L15 35 Z" fill="#E53935"/>
+  <!-- Front black L (right, overlapping) -->
+  <path d="M30 30 L30 120 L65 120 L65 65 L100 65 L100 30 Z" fill="#1a1a1a"/>
+  <!-- Beige/light overlap piece -->
+  <path d="M30 45 L35 45 L35 110 L30 110 Z" fill="#d6cfc4"/>
+  <path d="M35 45 L50 45 L50 65 L35 65 Z" fill="#d6cfc4"/>
+  <!-- Red accent on front L top -->
+  <path d="M50 0 L85 0 L85 35 L100 35 L100 65 L65 65 L65 30 L50 30 Z" fill="#E53935"/>
+
+  <!-- THIRDLINK text -->
+  <text x="115" y="62" font-family="'Plus Jakarta Sans', 'Helvetica Neue', Arial, sans-serif" font-size="52" font-weight="800" letter-spacing="2">
+    <tspan fill="#1a1a1a">THIRD</tspan><tspan fill="#E53935">LINK</tspan>
+  </text>
+
+  <!-- MEDIA text -->
+  <text x="115" y="105" font-family="'Plus Jakarta Sans', 'Helvetica Neue', Arial, sans-serif" font-size="38" font-weight="300" letter-spacing="14" fill="#1a1a1a">MEDIA</text>
+</svg>
