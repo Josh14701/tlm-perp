@@ -1776,6 +1776,67 @@ Respond as JSON with keys: brand, audience, competitors, offers, notes — each 
     }
   });
 
+  // Get a single Stripe invoice with full line-item details
+  app.get("/api/stripe/invoices/:id", async (req, res) => {
+    try {
+      if (!STRIPE_SECRET_KEY) {
+        return res.status(503).json({ message: "Stripe not configured" });
+      }
+
+      const Stripe = (await import("stripe")).default;
+      const stripe = new Stripe(STRIPE_SECRET_KEY);
+
+      const inv = await stripe.invoices.retrieve(req.params.id, {
+        expand: ["customer", "lines.data"],
+      });
+
+      const customer =
+        typeof inv.customer === "object" && inv.customer !== null
+          ? (inv.customer as any)
+          : null;
+
+      const lineItems = (inv.lines?.data ?? []).map((line: any) => ({
+        id: line.id,
+        description: line.description ?? "",
+        quantity: line.quantity ?? 1,
+        unitAmount: (line.unit_amount_excluding_tax
+          ? parseFloat(line.unit_amount_excluding_tax)
+          : (line.amount ?? 0)) / 100,
+        amount: (line.amount ?? 0) / 100,
+        currency: line.currency,
+      }));
+
+      res.json({
+        id: inv.id,
+        number: inv.number,
+        status: inv.status,
+        currency: inv.currency,
+        subtotal: (inv.subtotal ?? 0) / 100,
+        tax: (inv.tax ?? 0) / 100,
+        total: (inv.total ?? 0) / 100,
+        amountDue: (inv.amount_due ?? 0) / 100,
+        amountPaid: (inv.amount_paid ?? 0) / 100,
+        description: inv.description,
+        footer: inv.footer,
+        customerName: customer?.name ?? null,
+        customerEmail: customer?.email ?? null,
+        customerPhone: customer?.phone ?? null,
+        customerAddress: customer?.address ?? null,
+        lineItems,
+        dueDate: inv.due_date ? new Date(inv.due_date * 1000).toISOString() : null,
+        created: new Date(inv.created * 1000).toISOString(),
+        periodStart: inv.period_start ? new Date(inv.period_start * 1000).toISOString() : null,
+        periodEnd: inv.period_end ? new Date(inv.period_end * 1000).toISOString() : null,
+        invoiceUrl: inv.hosted_invoice_url,
+        invoicePdf: inv.invoice_pdf,
+        customFields: inv.custom_fields ?? [],
+        metadata: inv.metadata ?? {},
+      });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+
   // Create a Stripe payment link for quick payments
   app.post("/api/stripe/payment-link", async (req, res) => {
     try {

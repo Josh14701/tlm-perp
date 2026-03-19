@@ -526,3 +526,59 @@
 .dark ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.25);
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   Print / PDF styles — clean white invoice on print
+   ═══════════════════════════════════════════════════════════════ */
+@media print {
+  body,
+  body::before,
+  body::after {
+    background: white !important;
+    filter: none !important;
+  }
+
+  body::before,
+  body::after {
+    display: none !important;
+  }
+
+  /* Hide everything except the invoice */
+  .app-shell {
+    padding: 0 !important;
+  }
+
+  .app-shell::before,
+  .app-shell::after {
+    display: none !important;
+  }
+
+  [data-sidebar],
+  .glass-header,
+  .glass-sidebar,
+  nav,
+  header,
+  .print\\:hidden {
+    display: none !important;
+  }
+
+  .app-main {
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  #invoice-document {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    max-width: 100% !important;
+  }
+
+  /* Reset page margins for tight printing */
+  @page {
+    margin: 0.5in;
+    size: A4;
+  }
+}

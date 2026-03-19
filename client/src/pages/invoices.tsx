@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -564,6 +565,7 @@ function InvoiceDraftDialog({
 
 export default function Invoices() {
   const { toast } = useToast();
+  const [, navigate] = useLocation();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -910,6 +912,13 @@ export default function Invoices() {
                       <div className="flex flex-wrap gap-2">
                         <Button
                           size="sm"
+                          onClick={() => navigate(`/invoices/${draft.id}`)}
+                        >
+                          <Receipt className="h-4 w-4 mr-1.5" />
+                          View Invoice
+                        </Button>
+                        <Button
+                          size="sm"
                           variant="outline"
                           onClick={() => {
                             setEditingDraft(draft);
@@ -1067,6 +1076,15 @@ export default function Invoices() {
                         <TableCell className="text-sm text-muted-foreground">{formatDate(invoice.created)}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex gap-1 justify-end">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              title="View TLM Invoice"
+                              onClick={() => navigate(`/invoices/${invoice.id}`)}
+                            >
+                              <Receipt className="h-3.5 w-3.5" />
+                            </Button>
                             {invoice.status === "open" && (
                               <Button
                                 variant="ghost"
@@ -1084,7 +1102,7 @@ export default function Invoices() {
                                 variant="ghost"
                                 size="icon"
                                 className="h-7 w-7"
-                                title="View invoice"
+                                title="View in Stripe"
                                 onClick={() => window.open(invoice.invoiceUrl!, "_blank")}
                               >
                                 <ExternalLink className="h-3.5 w-3.5" />
@@ -1095,7 +1113,7 @@ export default function Invoices() {
                                 variant="ghost"
                                 size="icon"
                                 className="h-7 w-7"
-                                title="Download PDF"
+                                title="Download Stripe PDF"
                                 onClick={() => window.open(invoice.invoicePdf!, "_blank")}
                               >
                                 <Download className="h-3.5 w-3.5" />

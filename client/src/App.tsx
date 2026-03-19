@@ -23,6 +23,7 @@ import Team from "@/pages/team";
 import Contracts from "@/pages/contracts";
 import ContractDetail from "@/pages/contract-detail";
 import Invoices from "@/pages/invoices";
+import InvoiceDetail from "@/pages/invoice-detail";
 import Settings from "@/pages/settings";
 import PublicPortal from "@/pages/public-portal";
 import NotFound from "@/pages/not-found";
@@ -44,6 +45,7 @@ function AppRouter() {
       <Route path="/contracts" component={Contracts} />
       <Route path="/contracts/:id">{(params) => <ContractDetail params={params} />}</Route>
       <Route path="/invoices" component={Invoices} />
+      <Route path="/invoices/:id">{(params) => <InvoiceDetail params={params} />}</Route>
       <Route path="/settings" component={Settings} />
       <Route component={NotFound} />
     </Switch>
