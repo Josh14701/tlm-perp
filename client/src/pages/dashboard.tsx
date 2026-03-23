@@ -115,17 +115,17 @@ function getActivityIcon(action: string) {
 
 // ── KPI card config ────────────────────────────────────
 const kpiGradients = [
-  "from-orange-500/12 to-amber-500/8",
-  "from-violet-500/12 to-purple-500/8",
-  "from-rose-500/12 to-pink-500/8",
-  "from-emerald-500/12 to-teal-500/8",
+  "from-slate-900/8 to-slate-900/0",
+  "from-sky-500/10 to-sky-500/0",
+  "from-amber-400/16 to-amber-400/0",
+  "from-emerald-500/12 to-emerald-500/0",
 ];
 
 const kpiIconColors = [
-  "text-orange-600 dark:text-orange-400 bg-orange-500/12",
-  "text-violet-600 dark:text-violet-400 bg-violet-500/12",
-  "text-rose-600 dark:text-rose-400 bg-rose-500/12",
-  "text-emerald-600 dark:text-emerald-400 bg-emerald-500/12",
+  "text-slate-900 dark:text-slate-100 bg-slate-900/8 dark:bg-white/10",
+  "text-sky-600 dark:text-sky-300 bg-sky-500/10",
+  "text-amber-600 dark:text-amber-300 bg-amber-500/12",
+  "text-emerald-600 dark:text-emerald-300 bg-emerald-500/12",
 ];
 
 // ── Progress Ring (SVG donut) ──────────────────────────
@@ -414,7 +414,7 @@ export default function Dashboard() {
                 Dashboard
               </h1>
               <p className="text-sm text-muted-foreground">
-                Welcome back - here&apos;s your agency overview
+                A cleaner view of revenue, clients, and delivery
               </p>
             </div>
           </div>
@@ -436,21 +436,21 @@ export default function Dashboard() {
               <div className="grid gap-8 lg:grid-cols-[1.3fr_0.95fr] lg:items-start">
                 <div className="space-y-7">
                   <div className="space-y-4">
-                    <Badge variant="outline" className="border-white/50 bg-white/45 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-700 dark:text-slate-200">
-                      Agency cockpit
+                    <Badge variant="outline" className="border-slate-200 bg-slate-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                      Daily control room
                     </Badge>
                     <div className="space-y-3">
-                      <h2 className="max-w-[12ch] text-3xl font-semibold leading-[0.92] tracking-[-0.05em] text-slate-900 md:text-5xl dark:text-white">
-                        Your agency at a glance.
+                      <h2 className="max-w-[12ch] text-3xl font-semibold leading-[0.95] tracking-[-0.05em] text-slate-900 md:text-5xl dark:text-white">
+                        Clear numbers. Calm workspace.
                       </h2>
                       <p className="max-w-[58ch] text-sm leading-7 text-muted-foreground md:text-[15px]">
-                        Track revenue momentum, delivery health, and client activity from a single frosted workspace built for fast daily check-ins.
+                        A softer, more focused home base for tracking revenue momentum, delivery health, and client activity without the heavy glass treatment.
                       </p>
                     </div>
                   </div>
 
                   <div className="grid gap-4 sm:grid-cols-3">
-                    <div className="rounded-[26px] border border-white/30 bg-white/18 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.38)] backdrop-blur-xl">
+                    <div className="rounded-[26px] border border-slate-200 bg-slate-50 p-5 shadow-[0_10px_22px_rgba(148,163,184,0.08)] dark:border-slate-800 dark:bg-slate-900/60">
                       <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/70">
                         Monthly recurring
                       </p>
@@ -461,7 +461,7 @@ export default function Dashboard() {
                         Stable retained revenue
                       </p>
                     </div>
-                    <div className="rounded-[26px] border border-white/30 bg-white/18 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.38)] backdrop-blur-xl">
+                    <div className="rounded-[26px] border border-slate-200 bg-slate-50 p-5 shadow-[0_10px_22px_rgba(148,163,184,0.08)] dark:border-slate-800 dark:bg-slate-900/60">
                       <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/70">
                         Pipeline
                       </p>
@@ -472,7 +472,7 @@ export default function Dashboard() {
                         Open proposals in play
                       </p>
                     </div>
-                    <div className="rounded-[26px] border border-white/30 bg-white/18 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.38)] backdrop-blur-xl">
+                    <div className="rounded-[26px] border border-slate-200 bg-slate-50 p-5 shadow-[0_10px_22px_rgba(148,163,184,0.08)] dark:border-slate-800 dark:bg-slate-900/60">
                       <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/70">
                         Delivery health
                       </p>
@@ -487,7 +487,7 @@ export default function Dashboard() {
                 </div>
 
                 <div className="grid gap-4">
-                  <div className="rounded-[28px] border border-white/30 bg-white/18 p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.38)] backdrop-blur-xl">
+                  <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_14px_28px_rgba(148,163,184,0.12)] dark:border-slate-800 dark:bg-slate-950/70">
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground/70">
@@ -524,7 +524,7 @@ export default function Dashboard() {
                         </Button>
                       </div>
                     </div>
-                    <div className="mt-6 h-2 overflow-hidden rounded-full bg-white/50 dark:bg-white/8">
+                    <div className="mt-6 h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
                       <div
                         className="h-full rounded-full bg-gradient-to-r from-slate-900 via-sky-500 to-cyan-400 transition-all duration-500 dark:from-slate-100 dark:via-sky-400 dark:to-cyan-300"
                         style={{ width: `${Math.min(goalPct, 100)}%` }}
@@ -544,7 +544,7 @@ export default function Dashboard() {
                   </div>
 
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="rounded-[24px] border border-white/30 bg-white/16 p-5 backdrop-blur-xl">
+                    <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-900/60">
                       <div className="flex items-center gap-2 text-sm font-medium text-slate-900 dark:text-white">
                         <Users className="h-4 w-4 text-violet-500" />
                         Active clients
@@ -553,7 +553,7 @@ export default function Dashboard() {
                         {data?.clientCounts.active ?? 0}
                       </p>
                     </div>
-                    <div className="rounded-[24px] border border-white/30 bg-white/16 p-5 backdrop-blur-xl">
+                    <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-900/60">
                       <div className="flex items-center gap-2 text-sm font-medium text-slate-900 dark:text-white">
                         <ListTodo className="h-4 w-4 text-sky-500" />
                         Tasks tracked
@@ -669,7 +669,7 @@ export default function Dashboard() {
                   <CardTitle className="text-sm font-medium text-muted-foreground">
                     Total MRR
                   </CardTitle>
-                  <div className={`p-2 rounded-lg ${kpiIconColors[0]}`}>
+                  <div className={`rounded-2xl p-2.5 ${kpiIconColors[0]}`}>
                     <DollarSign className="h-4 w-4" />
                   </div>
                 </CardHeader>
@@ -693,7 +693,7 @@ export default function Dashboard() {
                   <CardTitle className="text-sm font-medium text-muted-foreground">
                     Active Clients
                   </CardTitle>
-                  <div className={`p-2 rounded-lg ${kpiIconColors[1]}`}>
+                  <div className={`rounded-2xl p-2.5 ${kpiIconColors[1]}`}>
                     <Users className="h-4 w-4" />
                   </div>
                 </CardHeader>
@@ -714,7 +714,7 @@ export default function Dashboard() {
                   <CardTitle className="text-sm font-medium text-muted-foreground">
                     Pipeline Value
                   </CardTitle>
-                  <div className={`p-2 rounded-lg ${kpiIconColors[2]}`}>
+                  <div className={`rounded-2xl p-2.5 ${kpiIconColors[2]}`}>
                     <TrendingUp className="h-4 w-4" />
                   </div>
                 </CardHeader>
@@ -733,7 +733,7 @@ export default function Dashboard() {
                   <CardTitle className="text-sm font-medium text-muted-foreground">
                     Task Completion
                   </CardTitle>
-                  <div className={`p-2 rounded-lg ${kpiIconColors[3]}`}>
+                  <div className={`rounded-2xl p-2.5 ${kpiIconColors[3]}`}>
                     <CheckCircle2 className="h-4 w-4" />
                   </div>
                 </CardHeader>
@@ -777,8 +777,8 @@ export default function Dashboard() {
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <div className="p-1.5 rounded-md bg-orange-500/12">
-                    <Target className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                  <div className="rounded-xl bg-slate-100 p-2 dark:bg-slate-800">
+                    <Target className="h-4 w-4 text-slate-900 dark:text-slate-100" />
                   </div>
                   Revenue Goal
                 </CardTitle>
@@ -858,8 +858,8 @@ export default function Dashboard() {
           <Card data-testid="card-client-status" className="glass-card">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <div className="p-1.5 rounded-md bg-violet-500/10">
-                  <Users className="h-4 w-4 text-violet-600 dark:text-violet-400" />
+                  <div className="rounded-xl bg-sky-50 p-2 dark:bg-sky-950/40">
+                    <Users className="h-4 w-4 text-sky-700 dark:text-sky-300" />
                 </div>
                 Client Status
               </CardTitle>
@@ -947,8 +947,8 @@ export default function Dashboard() {
           <Card data-testid="card-task-stats" className="glass-card">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <div className="p-1.5 rounded-md bg-orange-500/10">
-                  <ListTodo className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                  <div className="rounded-xl bg-emerald-50 p-2 dark:bg-emerald-950/40">
+                    <ListTodo className="h-4 w-4 text-emerald-700 dark:text-emerald-300" />
                 </div>
                 Task Overview
               </CardTitle>
@@ -964,7 +964,7 @@ export default function Dashboard() {
               ) : (
                 <div className="grid grid-cols-2 gap-3">
                   <div
-                    className="rounded-xl bg-gradient-to-br from-muted/60 to-muted/30 p-3.5 space-y-1"
+                    className="rounded-2xl border border-slate-200 bg-slate-50 p-3.5 space-y-1 dark:border-slate-800 dark:bg-slate-900/60"
                     data-testid="task-stat-todo"
                   >
                     <div className="flex items-center gap-1.5 text-muted-foreground">
@@ -977,7 +977,7 @@ export default function Dashboard() {
                   </div>
 
                   <div
-                    className="rounded-xl bg-gradient-to-br from-sky-500/8 to-sky-500/3 p-3.5 space-y-1"
+                    className="rounded-2xl border border-sky-100 bg-sky-50/80 p-3.5 space-y-1 dark:border-sky-900/40 dark:bg-sky-950/20"
                     data-testid="task-stat-in-progress"
                   >
                     <div className="flex items-center gap-1.5 text-sky-600 dark:text-sky-400">
@@ -990,7 +990,7 @@ export default function Dashboard() {
                   </div>
 
                   <div
-                    className="rounded-xl bg-gradient-to-br from-emerald-500/8 to-emerald-500/3 p-3.5 space-y-1"
+                    className="rounded-2xl border border-emerald-100 bg-emerald-50/80 p-3.5 space-y-1 dark:border-emerald-900/40 dark:bg-emerald-950/20"
                     data-testid="task-stat-complete"
                   >
                     <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
@@ -1003,7 +1003,7 @@ export default function Dashboard() {
                   </div>
 
                   <div
-                    className="rounded-xl bg-gradient-to-br from-muted/60 to-muted/30 p-3.5 space-y-1"
+                    className="rounded-2xl border border-slate-200 bg-slate-50 p-3.5 space-y-1 dark:border-slate-800 dark:bg-slate-900/60"
                     data-testid="task-stat-total"
                   >
                     <div className="flex items-center gap-1.5 text-muted-foreground">
@@ -1035,8 +1035,8 @@ export default function Dashboard() {
           <Card className="lg:col-span-3 glass-card" data-testid="card-top-clients">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <div className="p-1.5 rounded-md bg-orange-500/12">
-                  <BarChart3 className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                  <div className="rounded-xl bg-slate-100 p-2 dark:bg-slate-800">
+                    <BarChart3 className="h-4 w-4 text-slate-900 dark:text-slate-100" />
                 </div>
                 Top Clients by MRR
               </CardTitle>
@@ -1089,8 +1089,8 @@ export default function Dashboard() {
           <Card className="lg:col-span-2 glass-card" data-testid="card-recent-activity">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <div className="p-1.5 rounded-md bg-violet-500/10">
-                  <Activity className="h-4 w-4 text-violet-600 dark:text-violet-400" />
+                  <div className="rounded-xl bg-sky-50 p-2 dark:bg-sky-950/40">
+                    <Activity className="h-4 w-4 text-sky-700 dark:text-sky-300" />
                 </div>
                 Recent Activity
               </CardTitle>
@@ -1110,7 +1110,7 @@ export default function Dashboard() {
                       className="flex items-start gap-3 group"
                       data-testid={`activity-item-${idx}`}
                     >
-                      <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-muted to-muted/60 text-muted-foreground group-hover:from-primary/10 group-hover:to-primary/5 group-hover:text-primary transition-colors">
+                      <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-muted-foreground transition-colors group-hover:border-sky-200 group-hover:bg-sky-50 group-hover:text-sky-700 dark:border-slate-800 dark:bg-slate-900/60 dark:group-hover:border-sky-900/40 dark:group-hover:bg-sky-950/20 dark:group-hover:text-sky-300">
                         {getActivityIcon(item.action)}
                       </div>
                       <div className="flex-1 min-w-0">

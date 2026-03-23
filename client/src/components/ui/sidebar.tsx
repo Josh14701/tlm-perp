@@ -244,7 +244,7 @@ function Sidebar({
         <div
           data-sidebar="sidebar"
           data-slot="sidebar-inner"
-          className="glass-sidebar border-sidebar-border/80 flex h-full w-full flex-col overflow-hidden rounded-[30px] border shadow-[0_24px_60px_rgba(15,23,42,0.24)]"
+          className="glass-sidebar border-sidebar-border flex h-full w-full flex-col overflow-hidden rounded-[32px] border shadow-[0_18px_42px_rgba(148,163,184,0.18)]"
         >
           {children}
         </div>
@@ -266,7 +266,7 @@ function SidebarTrigger({
       data-slot="sidebar-trigger"
       variant="outline"
       size="icon"
-      className={cn("h-11 w-11 rounded-2xl border-white/40 bg-white/45 text-foreground shadow-[0_10px_24px_rgba(251,146,60,0.12)] backdrop-blur-xl hover:bg-white/60 dark:border-white/10 dark:bg-white/8 dark:hover:bg-white/12", className)}
+      className={cn("h-11 w-11 rounded-2xl border-border bg-white text-foreground shadow-[0_10px_22px_rgba(148,163,184,0.14)] hover:bg-muted dark:bg-card dark:hover:bg-muted/70", className)}
       onClick={(event) => {
         onClick?.(event)
         toggleSidebar()
@@ -310,10 +310,9 @@ function SidebarInset({ className, ...props }: React.ComponentProps<"main">) {
     <main
       data-slot="sidebar-inset"
       className={cn(
-        "relative flex w-full flex-1 flex-col overflow-hidden rounded-[34px] border border-white/45 bg-white/30 shadow-[0_28px_80px_rgba(243,128,53,0.14)] backdrop-blur-[30px]",
-        "before:pointer-events-none before:absolute before:inset-0 before:bg-[linear-gradient(180deg,rgba(255,255,255,0.22),rgba(255,255,255,0.06))] before:content-['']",
+        "relative flex w-full flex-1 flex-col overflow-hidden rounded-[34px] border border-border bg-[rgba(248,250,252,0.82)] shadow-[0_24px_60px_rgba(148,163,184,0.2)]",
         "md:peer-data-[variant=inset]:ml-3 md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ml-3",
-        "dark:border-white/8 dark:bg-slate-950/35 dark:shadow-[0_28px_80px_rgba(0,0,0,0.38)]",
+        "dark:border-sidebar-border dark:bg-[rgba(12,18,30,0.88)] dark:shadow-[0_28px_80px_rgba(0,0,0,0.38)]",
         className
       )}
       {...props}
@@ -477,7 +476,7 @@ function SidebarMenuItem({ className, ...props }: React.ComponentProps<"li">) {
 }
 
 const sidebarMenuButtonVariants = cva(
-  "peer/menu-button flex w-full items-center gap-3 overflow-hidden rounded-2xl border border-transparent px-3 py-2.5 text-left text-sm outline-hidden ring-sidebar-ring transition-[width,height,padding,transform,background-color,border-color,box-shadow] duration-200 hover:-translate-y-0.5 hover:bg-white/10 hover:text-sidebar-accent-foreground hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] focus-visible:ring-2 active:bg-white/14 active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 group-has-data-[sidebar=menu-action]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:border-white/12 data-[active=true]:bg-white/14 data-[active=true]:font-medium data-[active=true]:text-white data-[active=true]:shadow-[0_14px_34px_rgba(0,0,0,0.18),inset_0_1px_0_rgba(255,255,255,0.08)] data-[state=open]:hover:bg-white/10 data-[state=open]:hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:w-10! group-data-[collapsible=icon]:h-10! group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-2.5! [&>span:last-child]:truncate [&>svg]:size-[18px] [&>svg]:shrink-0",
+  "peer/menu-button flex w-full items-center gap-3 overflow-hidden rounded-[18px] border border-transparent px-3 py-2.5 text-left text-sm outline-hidden ring-sidebar-ring transition-[width,height,padding,transform,background-color,border-color,box-shadow,color] duration-200 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent disabled:pointer-events-none disabled:opacity-50 group-has-data-[sidebar=menu-action]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:border-slate-900/5 data-[active=true]:bg-slate-950 data-[active=true]:font-semibold data-[active=true]:text-white data-[active=true]:shadow-[0_14px_28px_rgba(15,23,42,0.18)] data-[state=open]:hover:bg-sidebar-accent data-[state=open]:hover:text-sidebar-accent-foreground dark:data-[active=true]:border-white/10 dark:data-[active=true]:bg-white dark:data-[active=true]:text-slate-950 group-data-[collapsible=icon]:w-10! group-data-[collapsible=icon]:h-10! group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-2.5! [&>span:last-child]:truncate [&>svg]:size-[18px] [&>svg]:shrink-0",
   {
     variants: {
       variant: {

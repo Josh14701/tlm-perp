@@ -52,7 +52,6 @@ const opsNav = [
 function TLMLogo() {
   return (
     <div className="relative">
-      <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-orange-400/30 to-amber-400/30 blur-lg" />
       <svg
         width="36"
         height="36"
@@ -64,9 +63,8 @@ function TLMLogo() {
       >
         <defs>
           <linearGradient id="logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#fb923c" />
-            <stop offset="50%" stopColor="#f97316" />
-            <stop offset="100%" stopColor="#ea580c" />
+            <stop offset="0%" stopColor="#1E293B" />
+            <stop offset="100%" stopColor="#0F172A" />
           </linearGradient>
         </defs>
         <rect x="2" y="2" width="28" height="28" rx="8" fill="url(#logo-grad)" />
@@ -99,14 +97,14 @@ export function AppSidebar() {
     >
       <SidebarHeader className="p-5 pb-4">
         <Link href="/" data-testid="sidebar-logo-link">
-          <div className="flex items-center gap-3 rounded-[22px] border border-white/12 bg-white/6 px-3 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition-all duration-300 hover:bg-white/10">
+          <div className="flex items-center gap-3 rounded-[24px] border border-sidebar-border bg-white px-4 py-3 shadow-[0_10px_24px_rgba(148,163,184,0.12)] transition-all duration-300 hover:bg-slate-50 dark:bg-sidebar-accent">
             <TLMLogo />
             <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-              <span className="text-[15px] font-bold text-sidebar-foreground tracking-tight">
+              <span className="text-[15px] font-extrabold text-sidebar-foreground tracking-tight">
                 TLM Engine
               </span>
-              <span className="text-[10px] font-semibold uppercase tracking-[0.22em] bg-gradient-to-r from-orange-300 via-amber-200 to-orange-400 bg-clip-text text-transparent">
-                Agency OS
+              <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-sidebar-foreground/45">
+                Studio dashboard
               </span>
             </div>
           </div>
@@ -197,12 +195,12 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="p-4 pt-2">
-        <div className="group-data-[collapsible=icon]:hidden rounded-[24px] border border-white/10 bg-white/8 px-3 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+        <div className="group-data-[collapsible=icon]:hidden rounded-[24px] border border-sidebar-border bg-white px-4 py-4 shadow-[0_10px_24px_rgba(148,163,184,0.12)] dark:bg-sidebar-accent">
           <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-sidebar-foreground/45">
             Workspace
           </p>
           <div className="mt-2 flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-400/80 to-amber-300/80 text-sm font-semibold text-slate-950">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-950 text-sm font-semibold text-white dark:bg-white dark:text-slate-950">
               TL
             </div>
             <div className="min-w-0">
